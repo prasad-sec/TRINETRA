@@ -1,24 +1,17 @@
-from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel
-from schemas.intelligence import ThreatIntelSummary
+from pydantic import BaseModel, Field
+from typing import List, Dict
 
-class URLInvestigationRequest(BaseModel):
-    url: str
-
-class IOCData(BaseModel):
-    domain: str
-    ip: Optional[str] = None
-    scheme: str
-    port: Optional[int] = None
-    domain_age_days: Optional[int] = None
-    is_ip_address: bool
-    reputation_status: str
-    intel: Optional[ThreatIntelSummary] = None
-
-class InvestigationResponse(BaseModel):
-    investigation_id: str
-    artifact_type: str
-    status: str
-    raw_analysis: IOCData
-    timestamp: datetime
+class InvestigationResult(BaseModel):
+    threat_score: int = Field(..., ge=0, le=100, description="Threat score between 0 and 100")
+    severity: str = Field(..., description="Severity level: SAFE, WARNING, CRITICAL")
+    threat_category: str = Field(..., description="A short 2-3 word classification, e.g., 'Phishing Campaign'")
+    ai_confidence: int = Field(..., ge=0, le=100, description="AI confidence score between 0 and 100")
+    ai_reasoning: str = Field(..., description="Detailed explanation of the findings")
+    iocs: Dict[str, List[str]] = Field(
+        default_factory=dict,
+        description="Indicators of Compromise, e.g., {'domains': [], 'ips': [], 'emails': []}"
+    )
+    recommended_actions: List[str] = Field(
+        default_factory=list,
+        description="A list of 2-3 actionable steps to mitigate the threat"
+    )

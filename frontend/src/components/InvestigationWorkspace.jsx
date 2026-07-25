@@ -7,6 +7,10 @@ const InvestigationWorkspace = ({ onStateChange }) => {
   const [investigationState, setInvestigationState] = useState('idle'); // idle, investigating, complete
   const [progress, setProgress] = useState(0);
   const [logText, setLogText] = useState('');
+  
+  const [inputUrl, setInputUrl] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [apiResult, setApiResult] = useState(null);
 
   const tabs = [
     { id: 'URL', label: '🌐 URL', placeholder: 'Enter suspicious URL or IP...' },
@@ -28,50 +32,89 @@ const InvestigationWorkspace = ({ onStateChange }) => {
 
   useEffect(() => {
     if (onStateChange) onStateChange(investigationState);
-
-    if (investigationState === 'investigating') {
-      let p = 0;
-      let logIdx = 0;
-      setLogText(logs[0]);
-
-      const interval = setInterval(() => {
-        p += 2;
-        setProgress(p);
-        
-        const nextLogIdx = Math.floor((p / 100) * logs.length);
-        if (nextLogIdx > logIdx && nextLogIdx < logs.length) {
-          logIdx = nextLogIdx;
-          setLogText(logs[logIdx]);
-        }
-
-        if (p >= 100) {
-          clearInterval(interval);
-          setLogText(logs[logs.length - 1]);
-          setTimeout(() => {
-            setInvestigationState('complete');
-          }, 500);
-        }
-      }, 50);
-
-      return () => clearInterval(interval);
-    }
   }, [investigationState, onStateChange]);
 
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (e) => {
     e.preventDefault();
-    if (investigationState === 'idle') setInvestigationState('investigating');
+    if (investigationState === 'idle') handleStartInvestigation();
   };
 
-  const handleStartInvestigation = () => {
-    if (investigationState === 'idle') setInvestigationState('investigating');
+  const handleStartInvestigation = async () => {
+    let currentInputUrl = inputUrl;
+    if (activeTab === 'URL') {
+      const trimmedUrl = inputUrl?.trim() || '';
+      if (!trimmedUrl || (!trimmedUrl.includes('.') && !trimmedUrl.includes(':'))) {
+        setErrorMsg('Please enter a valid URL or IP address');
+        return;
+      }
+      currentInputUrl = trimmedUrl;
+      setErrorMsg('');
+    }
+
+    if (investigationState === 'idle') {
+      setInvestigationState('investigating');
+      
+      let p = 0;
+      let logIdx = 0;
+      setLogText(logs[0]);
+      setProgress(0);
+
+      const interval = setInterval(() => {
+        p += 2;
+        if (p > 90) p = 90; // Cap at 90% while waiting for API
+        setProgress(p);
+        
+        const nextLogIdx = Math.floor((p / 100) * logs.length);
+        if (nextLogIdx > logIdx && nextLogIdx < logs.length - 1) {
+          logIdx = nextLogIdx;
+          setLogText(logs[logIdx]);
+        }
+      }, 100);
+
+      try {
+        const payload = activeTab === 'URL' ? { url: currentInputUrl } : { url: 'dropped_artifact' };
+        const res = await fetch('http://localhost:8000/api/v1/investigate/url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!res.ok) throw new Error('API Error');
+        
+        const data = await res.json();
+        
+        clearInterval(interval);
+        setProgress(100);
+        setLogText(logs[logs.length - 1]);
+        setApiResult(data);
+        
+        setTimeout(() => {
+          setInvestigationState('complete');
+        }, 500);
+
+      } catch (err) {
+        clearInterval(interval);
+        setInvestigationState('idle');
+        setErrorMsg('Connection Error: Unable to reach FastAPI backend.');
+      }
+    }
   };
 
   const isInvestigating = investigationState === 'investigating';
   const isComplete = investigationState === 'complete';
 
   if (isComplete) {
-    return <AIInvestigationResult onReset={() => setInvestigationState('idle')} activeTab={activeTab} />;
+    return <AIInvestigationResult 
+      onReset={() => {
+        setInvestigationState('idle');
+        setInputUrl('');
+        setApiResult(null);
+      }} 
+      activeTab={activeTab} 
+      apiResult={apiResult}
+      artifactName={inputUrl}
+    />;
   }
 
   return (
@@ -82,7 +125,7 @@ const InvestigationWorkspace = ({ onStateChange }) => {
         {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => { setActiveTab(tab.id); setErrorMsg(''); }}
             disabled={isInvestigating}
             className={`flex-1 py-2 px-4 text-xs font-mono tracking-widest uppercase transition-all rounded ${
               activeTab === tab.id
@@ -178,14 +221,24 @@ const InvestigationWorkspace = ({ onStateChange }) => {
               className="text-center w-full"
             >
               {activeTab === 'URL' ? (
-                <div className="flex flex-col items-center w-full gap-4">
+                <div className="flex flex-col items-center w-full gap-4 relative">
                    <input 
                       type="text" 
+                      value={inputUrl}
+                      onChange={(e) => {
+                        setInputUrl(e.target.value);
+                        setErrorMsg('');
+                      }}
                       placeholder={tabs.find(t => t.id === 'URL').placeholder}
                       className="w-full bg-[#05070A] border border-slate-700 rounded-lg py-3 px-4 text-cyan-100 font-mono text-sm focus:outline-none focus:border-cyan-400 focus:shadow-[0_0_15px_rgba(0,240,255,0.2)] transition-all"
                       onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
                    />
-                   <button onClick={handleStartInvestigation} className="px-6 py-2 bg-cyan-500/10 border border-cyan-500/50 text-cyan-300 font-mono text-xs uppercase tracking-widest hover:bg-cyan-500/20 rounded transition-colors">
+                   {errorMsg && (
+                     <div className="absolute top-14 mt-1 bg-red-500/10 border border-red-500/50 text-red-400 text-xs py-1 px-3 rounded shadow-[0_0_10px_rgba(255,0,0,0.1)]">
+                       {errorMsg}
+                     </div>
+                   )}
+                   <button onClick={handleStartInvestigation} className="mt-4 px-6 py-2 bg-cyan-500/10 border border-cyan-500/50 text-cyan-300 font-mono text-xs uppercase tracking-widest hover:bg-cyan-500/20 rounded transition-colors">
                      Begin Investigation
                    </button>
                 </div>

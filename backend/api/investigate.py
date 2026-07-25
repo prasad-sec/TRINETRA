@@ -1,27 +1,27 @@
-import uuid
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends
-from models.user import User
-from auth.jwt import get_current_user
-from schemas.investigation import URLInvestigationRequest, InvestigationResponse
+from fastapi import APIRouter
+from pydantic import BaseModel
 from engines.url_engine import URLEngine
+from ai.reasoning import AIEngine
+from schemas.investigation import InvestigationResult
 
 router = APIRouter(prefix="/api/v1/investigate", tags=["Investigation Engine"])
 
-@router.post("/url", response_model=InvestigationResponse)
-async def investigate_url(
-    request: URLInvestigationRequest,
-    current_user: User = Depends(get_current_user)
-):
-    engine = URLEngine(url=request.url)
-    analysis_result = await engine.analyze()
+url_engine = URLEngine()
+ai_engine = AIEngine()
+
+class URLRequest(BaseModel):
+    url: str
+
+@router.post("/url", response_model=InvestigationResult)
+async def investigate_url(request: URLRequest):
+    # Step 1: Extract IOCs deterministically
+    iocs = url_engine.extract_iocs(request.url)
     
-    investigation_id = str(uuid.uuid4())
-    
-    return InvestigationResponse(
-        investigation_id=investigation_id,
+    # Step 2: Pass IOC dictionary to AIEngine
+    ai_result = await ai_engine.analyze_artifact(
         artifact_type="URL",
-        status="COMPLETED",
-        raw_analysis=analysis_result,
-        timestamp=datetime.now(timezone.utc)
+        extracted_data=iocs
     )
+    
+    # Step 3: Return the combined InvestigationResult
+    return InvestigationResult(**ai_result)

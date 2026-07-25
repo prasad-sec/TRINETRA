@@ -8,15 +8,16 @@ TRINETRA is an AI-powered digital threat investigation platform designed to assi
 The platform is built using a modern, domain-driven microservices-ready architecture:
 - **Frontend**: React + Vite + Tailwind CSS + Framer Motion (Frictionless, immersive UI)
 - **Backend**: FastAPI (High-performance asynchronous Python framework)
-- **Database**: SQLite (Development) / PostgreSQL (Production)
+- **State**: Stateless V1.0 (No database placeholders; PostgreSQL planned for V2.0)
 
 ## Directory Structure
 ```
 Trinetra/
 ├── backend/            # FastAPI backend services
-│   ├── auth/           # Authentication and authorization (Ready for Enterprise)
-│   ├── database/       # Database configuration and connection
-│   ├── models/         # SQLAlchemy data models
+│   ├── ai/             # Groq-powered AI reasoning engine
+│   ├── api/            # API routing and endpoints
+│   ├── engines/        # Deterministic extraction and analysis engines
+│   ├── schemas/        # Pydantic data validation schemas
 │   └── main.py         # Application entry point
 ├── frontend/           # React frontend application
 │   ├── src/            # Source code for UI
@@ -31,8 +32,8 @@ Trinetra/
 
 ### Backend Setup
 1. Navigate to the backend directory: `cd backend`
-2. Install dependencies: `pip install fastapi uvicorn sqlalchemy passlib[bcrypt] python-jose python-multipart pydantic-settings`
-3. Run the development server: `python -m uvicorn main:app --reload`
+2. Install dependencies: `pip install fastapi uvicorn sqlalchemy passlib[bcrypt] python-jose python-multipart pydantic-settings python-dotenv`
+3. Run the development server: `python -m uvicorn main:app --reload --env-file .env`
    - The API will be available at `http://localhost:8000`
    - Swagger documentation is automatically generated at `http://localhost:8000/docs`
 

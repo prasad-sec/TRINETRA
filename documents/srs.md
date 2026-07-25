@@ -17,6 +17,9 @@ TRINETRA is designed to assist security analysts in investigating digital threat
 - **Investigation Workspace**: A central hub supporting multiple threat vectors (URL, Email, PDF, QR, Image).
 - **Realistic Pipeline Flow**: Visual representation of the investigation process (Receiving, Parsing, AI Reasoning, etc.).
 - **Explainable AI Reports**: Detailed investigation summaries including Threat Score, AI Confidence, and detailed reasoning (not just binary safe/malicious).
+- **Dynamic Threat Categorization**: AI dynamically categorizes threats based on the specifics of the analyzed artifact.
+- **Context-Aware Recommendations**: The AI engine provides customized, artifact-specific mitigation strategies rather than generic advice.
+- **Dynamic UI Feedback**: The interface provides immediate visual triage through severity-based conditional styling (Critical: Neon Red, Warning: Neon Orange, Safe: Neon Green).
 
 ### 2.3 Non-Functional Requirements
 - **Performance**: The API should respond swiftly for standard queries.
@@ -28,6 +31,6 @@ TRINETRA is designed to assist security analysts in investigating digital threat
 TRINETRA employs a modern, decoupled architecture:
 - **Frontend**: React (Vite) with Framer Motion and Tailwind CSS
 - **Backend API**: FastAPI (Python)
-- **Database**: SQLite (Dev) / PostgreSQL (Prod)
+- **State**: Stateless Design (V1.0 uses no database placeholders, preparing for PostgreSQL in V2.0)
 
 *(This document will be iteratively updated as the project evolves.)*
