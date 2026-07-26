@@ -16,7 +16,8 @@ TRINETRA is designed to assist security analysts in investigating digital threat
 - **Frictionless Entry**: Direct access to the dashboard from a cinematic splash screen.
 - **Investigation Workspace**: A central hub supporting multiple threat vectors (URL, Email, PDF, QR, Image).
 - **Realistic Pipeline Flow**: Visual representation of the investigation process (Receiving, Parsing, AI Reasoning, etc.).
-- **Explainable AI Reports**: Detailed investigation summaries including Threat Score, AI Confidence, and detailed reasoning (not just binary safe/malicious).
+- **Enterprise Digital Investigation Report**: Detailed investigation summaries including Threat Score, AI Confidence, and detailed reasoning (not just binary safe/malicious). AI Confidence is bounded by strict mathematical rules (e.g., verified brands score 97-99) to ensure realistic certainty measurement.
+- **Dynamic Extraction of IoCs and Evidence**: The backend AI intelligently and dynamically extracts specific factual metadata and Indicators of Compromise (IoCs) straight from the artifact, rendering them conditionally if threats are found.
 - **Dynamic Threat Categorization**: AI dynamically categorizes threats based on the specifics of the analyzed artifact.
 - **Context-Aware Recommendations**: The AI engine provides customized, artifact-specific mitigation strategies rather than generic advice.
 - **Dynamic UI Feedback**: The interface provides immediate visual triage through severity-based conditional styling (Critical: Neon Red, Warning: Neon Orange, Safe: Neon Green).

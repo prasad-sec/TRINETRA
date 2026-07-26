@@ -2,7 +2,7 @@
 > AI-Powered Digital Threat Investigation Platform
 
 ## Overview
-TRINETRA is an AI-powered digital threat investigation platform designed to assist security analysts in rapidly dissecting suspicious digital artifacts. Rather than acting as a simple scanner or generic dashboard, TRINETRA provides a focused, intelligent Investigation Workspace that analyzes multiple threat vectors and delivers explainable AI reasoning.
+TRINETRA is an AI-powered digital threat investigation platform designed to assist security analysts in rapidly dissecting suspicious digital artifacts. Rather than acting as a simple scanner or generic dashboard, TRINETRA provides a focused, intelligent Investigation Workspace that analyzes multiple threat vectors and delivers explainable AI reasoning. The system dynamically extracts actionable Indicators of Compromise (IoCs) and forensic Evidence directly from analyzed payloads, rendering them in an enterprise-grade digital investigation report.
 
 ## Architecture
 The platform is built using a modern, domain-driven microservices-ready architecture:

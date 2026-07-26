@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 
-const CinematicSplash = ({ onComplete }) => {
+const CinematicSplash = ({ onComplete, onTransitionStart }) => {
   const containerControls = useAnimation();
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [logIndex, setLogIndex] = useState(0);
@@ -41,10 +41,19 @@ const CinematicSplash = ({ onComplete }) => {
 
     // End sequence
     const endTimeout = setTimeout(() => {
-      containerControls.start({ opacity: 0, transition: { duration: 0.5 } }).then(() => {
+      // Trigger dashboard to start fading in underneath
+      if (onTransitionStart) onTransitionStart();
+      
+      // Animate the eye and container to create the iris fly-through effect
+      containerControls.start({
+        scale: [1, 1.2, 8],
+        opacity: [1, 1, 0],
+        filter: ["brightness(1)", "brightness(1.5)", "brightness(2)"],
+        transition: { duration: 0.8, times: [0, 0.3, 1], ease: "easeInOut" }
+      }).then(() => {
         onComplete();
       });
-    }, duration - 500);
+    }, duration - 800);
 
     return () => clearTimeout(endTimeout);
   }, [containerControls, onComplete, isFirstLaunch]);
@@ -53,9 +62,10 @@ const CinematicSplash = ({ onComplete }) => {
     // Quick 1-second launch
     return (
       <motion.div
-        className="fixed inset-0 z-50 bg-[#030712] flex items-center justify-center"
+        className="fixed inset-0 z-50 bg-theme-bg flex items-center justify-center pointer-events-none"
         initial={{ opacity: 1 }}
         animate={containerControls}
+        exit={{ opacity: 0 }}
       >
         <motion.h1
           className="text-3xl font-sans font-bold tracking-[0.5em] text-slate-100 uppercase"
@@ -72,13 +82,15 @@ const CinematicSplash = ({ onComplete }) => {
   // Full 6-second cinematic launch
   return (
     <motion.div
-      className="fixed inset-0 z-50 bg-[#030712] flex flex-col items-center justify-center overflow-hidden"
-      initial={{ opacity: 1 }}
+      className="fixed inset-0 z-50 bg-theme-bg flex flex-col items-center justify-center overflow-hidden pointer-events-none"
+      initial={{ opacity: 1, scale: 1 }}
       animate={containerControls}
+      exit={{ opacity: 0 }}
+      style={{ willChange: "transform, opacity, filter" }}
     >
       {/* Intense Radial Lighting Background */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/40 via-[#030712] to-[#030712]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/40 via-theme-bg to-theme-bg"></div>
       </div>
 
       <div className="relative flex flex-col items-center w-full max-w-2xl px-6 z-10">
@@ -92,7 +104,22 @@ const CinematicSplash = ({ onComplete }) => {
             animate={{ rotate: -360 }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           >
-            <polygon points="50,10 90,85 10,85" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" />
+            <motion.polygon 
+              points="50,5 88.97,72.5 11.03,72.5" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="0.5" 
+              strokeDasharray="2 2" 
+              animate={{ 
+                opacity: [0.3, 1, 0.3], 
+                filter: [
+                  "drop-shadow(0 0 5px rgba(34,211,238,0.4))", 
+                  "drop-shadow(0 0 15px rgba(34,211,238,1))", 
+                  "drop-shadow(0 0 5px rgba(34,211,238,0.4))"
+                ] 
+              }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            />
             <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.2" />
           </motion.svg>
 
@@ -142,7 +169,9 @@ const CinematicSplash = ({ onComplete }) => {
               cx="50"
               cy="50"
               r="4"
-              fill="#FFFFFF"
+              fill="transparent"
+              stroke="#00F0FF"
+              strokeWidth="0.5"
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 1.5 }}

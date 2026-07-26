@@ -3,6 +3,22 @@ import json
 import groq
 from groq import AsyncGroq
 
+from pydantic import BaseModel
+from typing import List, Dict
+
+class InvestigationReport(BaseModel):
+    threat_verdict: str
+    threat_score: int
+    ai_confidence: int
+    confidence_explanation: str
+    executive_summary: str
+    key_findings: List[str]
+    evidence_collected: Dict[str, str]
+    indicators_of_compromise: Dict[str, List[str]]
+    ai_analyst_reasoning: str
+    recommended_actions: List[str]
+    investigation_conclusion: str
+
 class AIEngine:
     def __init__(self):
         self.client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -10,18 +26,21 @@ class AIEngine:
         
     async def analyze_artifact(self, artifact_type: str, extracted_data: dict) -> dict:
         system_prompt = (
-            "You are a Principal Python AI Security Engineer and Senior Security Analyst. "
+            "You are an Expert Cyber Threat Intelligence Analyst. Your job is to forensically analyze URLs and identify phishing, typosquatting, and malicious intent. "
             f"Your task is to analyze the provided {artifact_type} extracted data and identify security threats. "
-            "You MUST return ONLY a raw JSON object matching the following schema:\n"
-            "{\n"
-            '  "threat_score": int (0-100),\n'
-            '  "severity": str ("SAFE", "WARNING", "CRITICAL"),\n'
-            '  "threat_category": str (A short 2-3 word classification, e.g., "Phishing Campaign", "Safe Domain", "Malware Delivery"),\n'
-            '  "ai_confidence": int (0-100),\n'
-            '  "ai_reasoning": str (The detailed explanation),\n'
-            '  "iocs": dict (e.g., {"domains": [], "ips": [], "emails": []}),\n'
-            '  "recommended_actions": list[str] (A list of 2-3 actionable steps based specifically on the artifact analyzed)\n'
-            "}"
+            "STRICT RULES:\n"
+            "1. DOMAIN STRUCTURE AWARENESS & CRITICAL TLD RULE: Understand official Country Code Top-Level Domains (ccTLDs) like `.co.in`, `.com.au`, `.gov.in`, `.ac.in`. Recognized public suffixes like `.co.in`, `.com.au`, `.gov.in`, `.org.uk`, and standard prefixes like `www` are NOT subdomains. For example, `https://www.sbi.co.in/` has ZERO excessive subdomains and is the official portal of State Bank of India. You MUST give official root domains a Threat Score of 0, 95%+ Confidence, and a SAFE verdict.\n"
+            "2. MANDATORY KEY FINDINGS ARRAY: You MUST return a JSON object containing a `key_findings` array with at least 3 concise technical observations (e.g., 'Valid SSL Certificate', 'Official TLD Structure', 'No Keyword Hijacking'). NEVER return an empty array for `key_findings`.\n"
+            "3. GLOBAL BRAND AWARENESS (CRITICAL): Actively check for typosquatting against both global and regional brands, including major Indian financial institutions, cooperative banks, and government portals. Do NOT hallucinate nonsensical acronyms like 'SARS' or 'SWATT'.\n"
+            "4. DYNAMIC CONFIDENCE RULE: You MUST NOT default to 96 for ai_confidence. If the domain is an official, verified brand (e.g., sbi.co.in), confidence MUST be between 97 and 99. If it is an obvious typosquat (e.g., insstagram), confidence MUST be between 90 and 95. If the URL is ambiguous, confidence MUST be between 75 and 85. Provide a 1-sentence confidence_explanation justifying this exact percentage.\n"
+            "5. EVIDENCE COLLECTED: You must extract factual metadata from the provided URL to populate evidence_collected. Include keys like 'Protocol' (HTTP/HTTPS), 'Root_Domain', 'TLD_Extension', and 'Subdomain_Count'. Do not leave this empty.\n"
+            "6. INDICATORS OF COMPROMISE (IoCs): If the threat is SUSPICIOUS or CRITICAL, populate the indicators_of_compromise dictionary. Group them by type. Example: {'Suspicious_Domains': ['fake-bank.com'], 'Targeted_Brands': ['State Bank of India'], 'Malicious_Keywords': ['login', 'verify']}. If SAFE, return an empty dictionary {}.\n"
+            "7. UNIQUE ROLES & PROFESSIONAL TONE: You are a Threat Intelligence Engine. Ensure each field in your JSON response contains UNIQUE information:\n"
+            "   - `executive_summary`: A concise 1-2 sentence executive summary of the investigation.\n"
+            "   - `key_findings`: List 3 distinct TECHNICAL findings. ONLY list specific technical indicators.\n"
+            "   - `ai_analyst_reasoning`: Explain the threat context or legitimacy in 2 sentences in a highly professional, definitive forensic tone.\n"
+            "   - `investigation_conclusion`: Provide the final investigative conclusion.\n"
+            "You MUST output your response in valid JSON matching this exact schema: { 'threat_verdict': 'string', 'threat_score': 0, 'ai_confidence': 95, 'confidence_explanation': 'string', 'executive_summary': 'string', 'key_findings': ['finding 1'], 'evidence_collected': {'key': 'value'}, 'indicators_of_compromise': {'type': ['ioc1']}, 'ai_analyst_reasoning': 'string', 'recommended_actions': ['action 1'], 'investigation_conclusion': 'string' }."
         )
         
         try:
@@ -41,25 +60,23 @@ class AIEngine:
             )
             
             response_content = chat_completion.choices[0].message.content
-            return json.loads(response_content)
+            # Validate output via Pydantic
+            parsed_data = json.loads(response_content)
+            validated_report = InvestigationReport(**parsed_data)
+            return validated_report.dict()
             
-        except (json.JSONDecodeError, groq.APIError) as e:
-            return {
-                "threat_score": 0,
-                "severity": "SAFE",
-                "threat_category": "Error",
-                "ai_confidence": 0,
-                "ai_reasoning": f"Analysis failed due to error: {str(e)}",
-                "iocs": {},
-                "recommended_actions": ["Retry the analysis"]
-            }
-        except Exception as e:
-             return {
-                "threat_score": 0,
-                "severity": "SAFE",
-                "threat_category": "Error",
-                "ai_confidence": 0,
-                "ai_reasoning": f"An unexpected error occurred: {str(e)}",
-                "iocs": {},
-                "recommended_actions": ["Check system logs"]
-            }
+        except (json.JSONDecodeError, groq.APIError, Exception) as e:
+            fallback = InvestigationReport(
+                threat_verdict="SAFE",
+                threat_score=0,
+                ai_confidence=99,
+                confidence_explanation="Fallback triggered due to analysis error.",
+                executive_summary="Analysis failed. Defaulting to safe fallback.",
+                key_findings=["Analysis could not be completed."],
+                evidence_collected={},
+                indicators_of_compromise={},
+                ai_analyst_reasoning=f"Analysis failed or validation error occurred: {str(e)}",
+                recommended_actions=["Check system logs or retry"],
+                investigation_conclusion="Investigation could not be completed."
+            )
+            return fallback.dict()
