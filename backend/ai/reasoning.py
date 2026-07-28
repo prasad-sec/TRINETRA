@@ -4,7 +4,7 @@ import groq
 from groq import AsyncGroq
 
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Any
 
 class InvestigationReport(BaseModel):
     threat_verdict: str
@@ -13,7 +13,7 @@ class InvestigationReport(BaseModel):
     confidence_explanation: str
     executive_summary: str
     key_findings: List[str]
-    evidence_collected: Dict[str, str]
+    evidence_collected: Dict[str, Any]
     indicators_of_compromise: Dict[str, List[str]]
     ai_analyst_reasoning: str
     recommended_actions: List[str]
@@ -40,6 +40,11 @@ class AIEngine:
             "   - `key_findings`: List 3 distinct TECHNICAL findings. ONLY list specific technical indicators.\n"
             "   - `ai_analyst_reasoning`: Explain the threat context or legitimacy in 2 sentences in a highly professional, definitive forensic tone.\n"
             "   - `investigation_conclusion`: Provide the final investigative conclusion.\n"
+            "CRITICAL SCORING RUBRIC:\n"
+            "- You are a strict cybersecurity engine. Your numerical `threat_score` MUST mathematically align with your text analysis.\n"
+            "- If your reasoning identifies 'typosquatting', 'phishing', or 'malicious intent', the `threat_score` MUST be between 85-100 and the `threat_verdict` MUST be 'CRITICAL'.\n"
+            "- If you identify suspicious keywords but no direct malice, the score MUST be 50-84 and verdict 'SUSPICIOUS'.\n"
+            "- ONLY output 'SAFE' (0-49) if the domain is verified and clean. NEVER output a low score if your reasoning states the site is dangerous.\n"
             "You MUST output your response in valid JSON matching this exact schema: { 'threat_verdict': 'string', 'threat_score': 0, 'ai_confidence': 95, 'confidence_explanation': 'string', 'executive_summary': 'string', 'key_findings': ['finding 1'], 'evidence_collected': {'key': 'value'}, 'indicators_of_compromise': {'type': ['ioc1']}, 'ai_analyst_reasoning': 'string', 'recommended_actions': ['action 1'], 'investigation_conclusion': 'string' }."
         )
         

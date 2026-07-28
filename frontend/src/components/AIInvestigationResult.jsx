@@ -281,6 +281,8 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
         </div>
 
+
+
       </div>
     </motion.div>
   );

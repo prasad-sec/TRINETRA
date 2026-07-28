@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import InvestigationWorkspace from './InvestigationWorkspace';
 import { motion } from 'framer-motion';
-const LivingDashboard = ({ isDashboardActive = true }) => {
+import { Eye } from 'lucide-react';
+const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
   const [aiState, setAiState] = useState('idle'); // idle, thinking, alert
 
   const handleWorkspaceStateChange = (state) => {
@@ -33,7 +34,8 @@ const LivingDashboard = ({ isDashboardActive = true }) => {
         className="py-3 border-b border-theme-border flex flex-col md:flex-row items-center justify-center md:justify-between px-4 md:px-8 bg-theme-surface/50 backdrop-blur-md shrink-0 z-10 relative gap-2 md:gap-0"
       >
         {/* Left Side: Brand */}
-        <div className="flex flex-col gap-1 items-center md:items-start text-center md:text-left">
+        <div className="flex items-center gap-2 text-center md:text-left">
+          <Eye className="w-6 h-6 text-cyan-500 mr-2" />
           <h1 className="font-sans text-xl md:text-2xl tracking-[0.3em] font-bold text-slate-100 uppercase">
             Trinetra
           </h1>
@@ -41,6 +43,14 @@ const LivingDashboard = ({ isDashboardActive = true }) => {
 
         {/* Right Side: Status Indicators */}
         <div className="flex items-center gap-4 md:gap-8 font-mono text-[9px] md:text-xs uppercase tracking-widest text-slate-400">
+          <button 
+            onClick={onOpenAbout}
+            className="flex flex-col items-center md:items-end gap-1 hover:text-cyan-400 transition-colors group cursor-pointer"
+          >
+            <span className="text-slate-500 group-hover:text-cyan-500/70 transition-colors">System</span>
+            <span className="text-slate-300 group-hover:text-cyan-400 transition-colors">About</span>
+          </button>
+          <div className="h-6 w-px bg-theme-border"></div>
           <div className="flex flex-col items-center md:items-end gap-1">
             <span className="text-slate-500">Reasoning</span>
             <span className="text-slate-300">Groq</span>
