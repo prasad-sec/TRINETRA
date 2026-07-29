@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Crosshair, Shield, Link, Mail, FileText, QrCode, Monitor } from 'lucide-react';
 import AIInvestigationResult from './AIInvestigationResult';
 import AIAssistantEye from './AIAssistantEye';
+import EmailWorkspace from './EmailWorkspace';
 
 const STAGES = [
   "Artifact Received",
@@ -58,6 +59,35 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
+        });
+        
+        if (!res.ok) throw new Error('API Error');
+        
+        const data = await res.json();
+        
+        setActiveStage(STAGES.length - 1);
+        setApiResult(data);
+        
+        setTimeout(() => {
+          setInvestigationState('complete');
+        }, 1000);
+
+      } catch (_err) {
+        setInvestigationState('idle');
+        setErrorMsg('Connection Error: Unable to reach FastAPI backend.');
+      }
+    }
+  };
+
+  const handleEmailInvestigate = async (formData) => {
+    if (investigationState === 'idle') {
+      setInvestigationState('investigating');
+      setActiveStage(0);
+
+      try {
+        const res = await fetch('http://localhost:8000/api/v1/investigate/email', {
+          method: 'POST',
+          body: formData
         });
         
         if (!res.ok) throw new Error('API Error');
@@ -172,43 +202,64 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                   <p className="font-sans text-xs md:text-sm text-slate-400">Submit a suspicious digital artifact to begin an investigation.</p>
                 </div>
 
-                {activeTab === 'URL' ? (
-                  <div className="flex flex-col gap-4 relative w-full group">
-                    <div className="relative flex items-center w-full">
-                      <div className="absolute left-4 text-cyan-500">
-                        <Crosshair className="w-4 h-4 md:w-5 md:h-5" />
+                <div key={activeTab} className="w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
+                  {activeTab === 'URL' ? (
+                    <div className="flex flex-col gap-4 relative w-full group animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
+                      <div className="relative flex items-center w-full">
+                        <div className="absolute left-4 text-cyan-500">
+                          <Crosshair className="w-4 h-4 md:w-5 md:h-5" />
+                        </div>
+                        <input 
+                          type="text" 
+                          value={inputUrl}
+                          onChange={(e) => {
+                            setInputUrl(e.target.value);
+                            setErrorMsg('');
+                          }}
+                          placeholder={tabs.find(t => t.id === 'URL').placeholder}
+                          className="w-full bg-theme-surface-2 border border-theme-border rounded-none py-4 md:py-5 pl-12 md:pl-14 pr-4 text-slate-100 font-mono text-sm md:text-base focus:outline-none focus:border-cyan-500/80 focus:bg-theme-surface focus:shadow-[inset_0_0_20px_rgba(0,240,255,0.05)] transition-all placeholder:text-slate-600 shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
+                        />
                       </div>
-                      <input 
-                        type="text" 
-                        value={inputUrl}
-                        onChange={(e) => {
-                          setInputUrl(e.target.value);
-                          setErrorMsg('');
-                        }}
-                        placeholder={tabs.find(t => t.id === 'URL').placeholder}
-                        className="w-full bg-theme-surface-2 border border-theme-border rounded-none py-4 md:py-5 pl-12 md:pl-14 pr-4 text-slate-100 font-mono text-sm md:text-base focus:outline-none focus:border-cyan-500/80 focus:bg-theme-surface focus:shadow-[inset_0_0_20px_rgba(0,240,255,0.05)] transition-all placeholder:text-slate-600 shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
-                      />
+                      {errorMsg && (
+                        <div className="text-red-400 text-xs mt-1 text-center md:text-left">
+                          {errorMsg}
+                        </div>
+                      )}
+                      <button 
+                        onClick={handleStartInvestigation} 
+                        className="w-full py-4 md:py-5 bg-cyan-900/20 border border-cyan-500/30 text-cyan-400 font-mono font-bold text-xs md:text-sm uppercase tracking-[0.3em] hover:bg-cyan-500/20 hover:border-cyan-400/80 hover:shadow-[0_0_25px_rgba(0,240,255,0.15)] rounded-none transition-all"
+                      >
+                        BEGIN INVESTIGATION
+                      </button>
                     </div>
-                    {errorMsg && (
-                      <div className="text-red-400 text-xs mt-1 text-center md:text-left">
-                        {errorMsg}
-                      </div>
-                    )}
-                    <button 
-                      onClick={handleStartInvestigation} 
-                      className="w-full py-4 md:py-5 bg-cyan-900/20 border border-cyan-500/30 text-cyan-400 font-mono font-bold text-xs md:text-sm uppercase tracking-[0.3em] hover:bg-cyan-500/20 hover:border-cyan-400/80 hover:shadow-[0_0_25px_rgba(0,240,255,0.15)] rounded-none transition-all"
-                    >
-                      BEGIN INVESTIGATION
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 md:p-12 border border-dashed border-theme-border rounded-xl bg-theme-surface/30 w-full">
-                     <Shield className="w-10 h-10 md:w-12 md:h-12 text-slate-600 mb-4" />
-                     <h3 className="font-sans text-xs md:text-sm font-semibold tracking-widest text-slate-300 uppercase mb-2">Drop Artifact Here</h3>
-                     <p className="font-mono text-[10px] md:text-xs text-slate-500 text-center">Supported formats: Email, PDF, QR Code, Screenshot.</p>
-                  </div>
-                )}
+                  ) : activeTab === 'EMAIL' ? (
+                    <EmailWorkspace 
+                      setReportData={(data) => {
+                        setApiResult(data);
+                        setInvestigationState('complete');
+                      }}
+                      setEyeStatus={(status) => {
+                         // The parent handles eye status primarily through investigationState
+                         // but we can add a stub or minimal handling if needed.
+                      }}
+                      setIsInvestigating={(status) => {
+                        if (status) {
+                          setInvestigationState('investigating');
+                          setActiveStage(0);
+                        } else {
+                          // Cleanup handled by setReportData transitioning to 'complete'
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 md:p-12 border border-dashed border-theme-border rounded-xl bg-theme-surface/30 w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
+                       <Shield className="w-10 h-10 md:w-12 md:h-12 text-slate-600 mb-4" />
+                       <h3 className="font-sans text-xs md:text-sm font-semibold tracking-widest text-slate-300 uppercase mb-2">Drop Artifact Here</h3>
+                       <p className="font-mono text-[10px] md:text-xs text-slate-500 text-center">Supported formats: Email, PDF, QR Code, Screenshot.</p>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
 

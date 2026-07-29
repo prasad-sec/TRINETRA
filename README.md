@@ -6,7 +6,7 @@ TRINETRA is an AI-powered digital threat investigation platform designed to assi
 
 ## Architecture
 The platform is built using a modern, domain-driven microservices-ready architecture:
-- **Frontend**: React + Vite + Tailwind CSS + Framer Motion (Frictionless, immersive UI)
+- **Frontend**: React + Vite + Tailwind CSS + Framer Motion (Frictionless, immersive UI with seamless CSS-driven tab navigation and animations)
 - **Backend**: FastAPI (High-performance asynchronous Python framework)
 - **State**: Stateless V1.0 (No database placeholders; PostgreSQL planned for V2.0)
 

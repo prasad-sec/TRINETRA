@@ -68,3 +68,14 @@ This document serves as a continuous record of technical decisions, architecture
 
 ### Technical Decisions & Notes:
 - **Data Integrity**: Both backend schema output mapping and frontend UI conditional rendering ensure zero placeholders exist; if a URL returns no explicit IoCs, the report dynamically handles it rather than generating mock components.
+
+## [Phase 6] - UX Polish & UI Flow Perfection
+**Author:** AI Development Assistant
+
+### Progress:
+- **EmailWorkspace Loading Sequence**: Refactored the `EmailWorkspace` component to handle its own explicit loading states, completely eliminating flashes of dummy data. Correctly sequenced state unmounting (`setReportData(null)` before loading triggers) to ensure clean transitions.
+- **Frictionless Tab Transitions**: Integrated Framer Motion and Tailwind CSS `animate-in fade-in` animation properties seamlessly into the URL, Email, and Drop workspace wrapper containers.
+- **Parent Tab Remounting Strategy**: Leveraged React's `key` prop dynamically bound to the `activeTab` state to force unmount/remount cycles during tab navigation, ensuring the fade-in animations trigger predictably and consistently across all workspace switches.
+
+### Technical Decisions & Notes:
+- **Deterministic UI Flow**: By clearing old dummy report data prior to initiating the "Investigating" UI state, we guarantee that async racing conditions won't accidentally flash a "Safe" verdict while awaiting the new server response.

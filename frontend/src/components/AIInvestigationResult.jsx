@@ -3,12 +3,13 @@ import { ShieldAlert, FileText, AlertTriangle, Cpu, X, Server, Activity, Databas
 import { motion } from 'framer-motion';
 
 const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: providedArtifactName }) => {
-  const reportData = apiResult || {};
+  // Pull from ai_analysis if it exists (for Email investigation)
+  const reportData = apiResult?.ai_analysis || apiResult || {};
 
   // -- BASE DATA --
-  const urlTarget = reportData.url || reportData.suspicious_domain || providedArtifactName || (activeTab === 'URL' ? 'Unknown URL' : 'Unknown Artifact');
+  const urlTarget = apiResult?.url || apiResult?.suspicious_domain || providedArtifactName || (activeTab === 'URL' ? 'Unknown URL' : 'Unknown Artifact');
   const threatScore = reportData.threat_score || reportData.threatScore || 0;
-  let threatVerdict = reportData.threat_verdict || reportData.threatVerdict || reportData.severity || 'CRITICAL';
+  let threatVerdict = reportData.verdict || reportData.threat_verdict || reportData.threatVerdict || reportData.severity || 'CRITICAL';
   
   if (threatScore <= 20 && threatVerdict !== 'SAFE') {
     threatVerdict = 'SAFE';
@@ -34,7 +35,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
   const riskLevel = threatScore < 30 ? "Low Risk" : threatScore < 70 ? "Moderate Risk" : "High Risk";
 
   // -- 4. Classification Confidence --
-  let aiConfidence = reportData.ai_confidence || reportData.aiConfidence || 96;
+  let aiConfidence = reportData.confidence || reportData.ai_confidence || reportData.aiConfidence || 96;
   if (threatVerdict === 'SAFE' && threatScore <= 20 && aiConfidence < 90) {
     aiConfidence = 95;
   }
@@ -53,11 +54,18 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
   const hasEvidence = evidence && Object.keys(evidence).length > 0;
 
   // -- 7. Indicators of Compromise --
-  const iocs = reportData.indicators_of_compromise || reportData.iocs || {};
-  const hasIocs = Object.keys(iocs).some(key => Array.isArray(iocs[key]) && iocs[key].length > 0);
+  const rawIocs = reportData.indicators_of_compromise || reportData.iocs || {};
+  let iocs = rawIocs;
+  let isIocsArray = Array.isArray(rawIocs);
+  let hasIocs = false;
+  if (isIocsArray) {
+    hasIocs = rawIocs.length > 0;
+  } else {
+    hasIocs = Object.keys(iocs).some(key => Array.isArray(iocs[key]) && iocs[key].length > 0);
+  }
 
   // -- 8. AI Analyst Reasoning --
-  const aiReasoning = reportData.ai_analyst_reasoning || reportData.ai_reasoning || reportData.aiReasoning || null;
+  const aiReasoning = reportData.ai_reasoning || reportData.ai_analyst_reasoning || reportData.aiReasoning || null;
 
   // -- 9. Recommended Actions --
   const actions = reportData.recommended_actions || reportData.recommendedActions || [];
@@ -209,16 +217,24 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
             </h3>
             {hasIocs ? (
               <div className="flex-1 font-mono text-xs text-slate-300 space-y-4 overflow-y-auto pr-2 scrollbar-hide">
-                {Object.entries(iocs).filter(([_, arr]) => Array.isArray(arr) && arr.length > 0).map(([category, items]) => (
-                  <div key={category}>
-                    <div className="text-slate-500 uppercase tracking-widest text-[10px] mb-1 border-b border-slate-800 pb-1">{category.replace(/_/g, ' ')}</div>
-                    <ul className="space-y-1">
-                      {items.map((item, idx) => (
-                        <li key={idx} className="truncate">{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                {isIocsArray ? (
+                  <ul className="space-y-2 list-disc list-inside">
+                    {iocs.map((item, idx) => (
+                      <li key={idx} className="leading-relaxed">{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  Object.entries(iocs).filter(([_, arr]) => Array.isArray(arr) && arr.length > 0).map(([category, items]) => (
+                    <div key={category}>
+                      <div className="text-slate-500 uppercase tracking-widest text-[10px] mb-1 border-b border-slate-800 pb-1">{category.replace(/_/g, ' ')}</div>
+                      <ul className="space-y-1 list-disc list-inside">
+                        {items.map((item, idx) => (
+                          <li key={idx} className="truncate">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+                )}
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center">

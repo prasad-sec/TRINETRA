@@ -21,6 +21,7 @@ TRINETRA is designed to assist security analysts in investigating digital threat
 - **Dynamic Threat Categorization**: AI dynamically categorizes threats based on the specifics of the analyzed artifact.
 - **Context-Aware Recommendations**: The AI engine provides customized, artifact-specific mitigation strategies rather than generic advice.
 - **Dynamic UI Feedback**: The interface provides immediate visual triage through severity-based conditional styling (Critical: Neon Red, Warning: Neon Orange, Safe: Neon Green).
+- **Frictionless UI Transitions**: Seamless CSS-driven fade animations govern tab navigation and loading states, ensuring the user experience never feels jarring or visually broken during network latency.
 
 ### 2.3 Non-Functional Requirements
 - **Performance**: The API should respond swiftly for standard queries.
