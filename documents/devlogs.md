@@ -79,3 +79,28 @@ This document serves as a continuous record of technical decisions, architecture
 
 ### Technical Decisions & Notes:
 - **Deterministic UI Flow**: By clearing old dummy report data prior to initiating the "Investigating" UI state, we guarantee that async racing conditions won't accidentally flash a "Safe" verdict while awaiting the new server response.
+
+## [Phase 7] - Advanced UI State Management & Timing Locks
+**Author:** AI Development Assistant
+
+### Progress:
+- **PdfWorkspace UX Upgrade**: Replaced the automatic file upload mechanism in `PdfWorkspace.jsx` with a robust two-step staging process. Users now select a file, review the staged artifact (with dynamic file size formatting in KB/MB), and explicitly trigger the "Begin Investigation" action.
+- **Master Timing Lock**: Discovered and resolved an edge case where near-instant in-memory API responses (e.g., PDF extraction) bypassed the frontend's visual storytelling. Implemented a centralized `handleAnalysisComplete` timing lock in the parent `InvestigationWorkspace.jsx`. This lock intercepts all API responses and enforces a strict minimum 4000ms display time for the global scanning animation, ensuring users experience the complete threat intelligence correlation sequence regardless of backend response speed.
+- **Global Animation Synchronization**: Propagated the `setEyeStatus` and `setIsInvestigating` state-lifting props explicitly into the PDF and Email workspaces to ensure that the centralized Holographic Eye triggers synchronously with localized workspace events.
+
+### Technical Decisions & Notes:
+- **Storytelling over Raw Speed**: In a cybersecurity investigation platform, the *perception* of deep analysis is crucial for user trust. By enforcing a minimum animation time, we prevent the UI from flashing disruptively and maintain the immersive "investigation" experience, even when the backend executes tasks sub-second.
+
+## [Phase 8] - Investigation State Machine & Animation Orchestrator
+**Author:** AI Development Assistant
+
+### Progress:
+- **Unified State Machine**: Replaced loosely coupled boolean loading flags across the frontend with a strict state machine (`idle`, `investigating`, `reasoning`, `completed`, `error`) within `InvestigationWorkspace.jsx`.
+- **Pipeline Progression Controller**: Implemented a `useEffect`-driven orchestrator that automatically progresses the visual investigation pipeline across 6 distinct correlation stages, ensuring it pauses at "AI Reasoning" if the backend is still processing.
+- **Minimum Visible Duration Lock**: Refined the backend synchronization logic to enforce a minimum visible duration of 1200ms for the investigation animations, independently of the FastAPI response speed.
+- **Dynamic AI Eye Synchronization**: Updated `AIAssistantEye.jsx` to respond natively to the state machine (including a new `suspicious` amber state and distinct `thinking`/`reasoning` animations).
+- **Graceful Transitions**: Utilized Framer Motion's `AnimatePresence (mode="wait")` to completely eliminate UI flicker, remount flashes, and layout shifts when transitioning from the active investigation pipeline to the final rendered report.
+- **Email & PDF Workspace Polish**: Refactored both workspaces to act as pure staging views. They now remain visibly locked in their "Investigating..." states without improperly resetting themselves mid-transition.
+
+### Technical Decisions & Notes:
+- **Cinematic Experience**: By decoupling the visual storytelling pipeline from the literal API resolution (while still ensuring it never completes *before* the API does), we guarantee the user experiences a believable, immersive AI digital forensics workflow without artificially slowing down the backend execution.

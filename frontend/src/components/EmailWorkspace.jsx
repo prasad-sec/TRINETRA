@@ -4,8 +4,7 @@ import { UploadCloud, FileText, Info, CheckCircle } from 'lucide-react';
 export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInvestigating }) {
   const [emailFile, setEmailFile] = useState(null);
   const [emailText, setEmailText] = useState('');
-  const [isInvestigatingLocal, setIsInvestigatingLocal] = useState(false);
-  const [reportDataLocal, setReportDataLocal] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleInvestigate = async (e) => {
@@ -23,49 +22,32 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
     }
 
     try {
-      // 3. Prevent Flash of Dummy Data
-      if (setReportData) setReportData(null); 
-      setReportDataLocal(null);
-
-      // 2. Trigger Active UI States
-      setIsInvestigatingLocal(true);
+      setIsSubmitting(true);
       if (setIsInvestigating) setIsInvestigating(true);
-      if (setEyeStatus) setEyeStatus('investigating');
 
-      // 3. Make the Live Network Call (Ensure port matches FastAPI, default 8000)
-      const response = await fetch('http://localhost:8000/api/v1/investigate/email', {
+      const response = await fetch('http://localhost:8000/api/investigate/email', {
         method: 'POST',
-        body: formData, // Do NOT set Content-Type header; browser handles multipart boundary automatically
+        body: formData, 
       });
 
       if (!response.ok) {
         throw new Error(`Backend returned status ${response.status}`);
       }
 
-      // 4. Parse the Groq AI Response
       const data = await response.json();
 
-      // 5. Update Report State
+      // Hand over to parent. Do NOT reset state or setIsInvestigating(false) here,
+      // as the parent's master timing lock will handle the visual transition.
       if (setReportData) setReportData(data);
-      setReportDataLocal(data);
-
-      // 6. Update Dynamic Eye based on AI Verdict
-      if (data.ai_analysis && data.ai_analysis.verdict && setEyeStatus) {
-        setEyeStatus(data.ai_analysis.verdict.toLowerCase()); // e.g., 'safe', 'suspicious', 'malicious'
-      } else if (setEyeStatus) {
-        setEyeStatus('ready');
-      }
 
     } catch (error) {
       console.error("Investigation API Error:", error);
-      // Fallback UI state on failure
-      if (setEyeStatus) setEyeStatus('ready');
+      if (setIsInvestigating) setIsInvestigating(false); // Only toggle off on error
       alert("Failed to connect to the TRINETRA analysis engine. Ensure the backend is running.");
-    } finally {
-      // 7. Remove loading state
-      setIsInvestigatingLocal(false);
-      if (setIsInvestigating) setIsInvestigating(false);
+      setIsSubmitting(false); // Reset submit state on error
     }
+    // No finally block to reset `isSubmitting` on success, 
+    // ensuring the UI stays in its "File Selected" disabled state until unmounted.
   };
 
   const handleFileUpload = (e) => {
@@ -81,7 +63,7 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
   };
 
   const handleDropzoneClick = () => {
-    fileInputRef.current?.click();
+    if (!isSubmitting) fileInputRef.current?.click();
   };
 
   const handleDragOver = (e) => {
@@ -90,6 +72,7 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
 
   const handleDrop = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
       const fileName = droppedFile.name.toLowerCase();
@@ -102,33 +85,12 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
     }
   };
 
-  // 1. If currently investigating, ONLY show the loading sequence
-  if (isInvestigatingLocal) {
-    return (
-      <div className="w-full animate-[fadeIn_0.5s_ease-in-out] transition-opacity duration-700 ease-in-out opacity-100 flex flex-col items-center justify-center py-12">
-        <h3 className="font-sans text-sm font-semibold tracking-widest text-cyan-400 uppercase mb-1">Investigation Active</h3>
-        <p className="font-mono text-xs text-slate-500">Analyzing email signatures and behavior...</p>
-      </div>
-    );
-  }
-
-  // 2. If investigation is done and report data exists, ONLY show the report
-  // (Parent InvestigationWorkspace actually handles the AIInvestigationResult, but this satisfies the structural requirement)
-  if (reportDataLocal) {
-    return (
-      <div className="w-full animate-[fadeIn_0.5s_ease-in-out] transition-opacity duration-700 ease-in-out opacity-100 flex flex-col items-center justify-center py-12">
-        <h3 className="font-sans text-sm font-semibold tracking-widest text-cyan-400 uppercase mb-1">Investigation Complete</h3>
-        <p className="font-mono text-xs text-slate-500">Report data generated.</p>
-      </div>
-    );
-  }
-
-  // 3. Otherwise, show the default input workspace
+  // Render ONLY the staging UI
   return (
     <div className="w-full animate-[fadeIn_0.5s_ease-in-out] transition-opacity duration-700 ease-in-out opacity-100">
       {/* File Upload Zone */}
       <div 
-        className="w-full border-2 border-dashed border-slate-700/50 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-900/30 hover:bg-slate-800/50 transition-colors cursor-pointer"
+        className={`w-full border-2 border-dashed border-slate-700/50 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-900/30 transition-colors ${!isSubmitting ? 'hover:bg-slate-800/50 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
         onClick={handleDropzoneClick}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -155,6 +117,7 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
           className="hidden" 
           ref={fileInputRef}
           onChange={handleFileUpload}
+          disabled={isSubmitting}
         />
       </div>
 
@@ -173,10 +136,11 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
 
       {/* Text Area */}
       <textarea
-        className="w-full h-40 bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 text-slate-300 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 resize-none font-mono text-sm placeholder-slate-600"
+        className={`w-full h-40 bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 text-slate-300 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 resize-none font-mono text-sm placeholder-slate-600 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
         placeholder={`Example format:\nFrom: Support <admin@security.com>\nSubject: Urgent Account Review\n\nDear User, your account is locked.\nClick here to verify: https://suspicious-link.com`}
         value={emailText}
         onChange={handleTextChange}
+        disabled={isSubmitting}
       />
       
       {/* Educational Microcopy */}
@@ -187,11 +151,11 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
 
       {/* The Action Button */}
       <button
-        className={`w-full py-4 mt-8 font-mono tracking-widest rounded-xl transition-all duration-300 ${(!emailFile && !emailText.trim()) || isInvestigatingLocal ? 'bg-slate-900/50 border border-slate-800 text-slate-600 cursor-not-allowed' : 'bg-cyan-950/40 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-900/60 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]'}`}
-        disabled={(!emailFile && !emailText.trim()) || isInvestigatingLocal}
+        className={`w-full py-4 mt-8 font-mono tracking-widest rounded-xl transition-all duration-300 ${(!emailFile && !emailText.trim()) || isSubmitting ? 'bg-slate-900/50 border border-slate-800 text-slate-600 cursor-not-allowed' : 'bg-cyan-950/40 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-900/60 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]'}`}
+        disabled={(!emailFile && !emailText.trim()) || isSubmitting}
         onClick={handleInvestigate}
       >
-        {isInvestigatingLocal ? 'INVESTIGATING...' : 'BEGIN INVESTIGATION'}
+        {isSubmitting ? 'INVESTIGATING...' : 'BEGIN INVESTIGATION'}
       </button>
     </div>
   );

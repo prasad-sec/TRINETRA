@@ -22,6 +22,8 @@ TRINETRA is designed to assist security analysts in investigating digital threat
 - **Context-Aware Recommendations**: The AI engine provides customized, artifact-specific mitigation strategies rather than generic advice.
 - **Dynamic UI Feedback**: The interface provides immediate visual triage through severity-based conditional styling (Critical: Neon Red, Warning: Neon Orange, Safe: Neon Green).
 - **Frictionless UI Transitions**: Seamless CSS-driven fade animations govern tab navigation and loading states, ensuring the user experience never feels jarring or visually broken during network latency.
+- **Immersive Timing Engine & State Machine**: A master timing lock guarantees that the visual investigation pipeline plays for a strict minimum duration (1200ms). A strict frontend state machine orchestrates smooth, cinematic cross-fades between the staging view, the active pipeline, and the final report, ensuring the UI never flashes or remounts disruptively during near-instant API resolution.
+- **Artifact Staging**: Workspaces utilize a two-step staging process, allowing analysts to review selected evidence metadata before explicitly authorizing the investigation.
 
 ### 2.3 Non-Functional Requirements
 - **Performance**: The API should respond swiftly for standard queries.

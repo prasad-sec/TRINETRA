@@ -8,6 +8,8 @@ const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
     switch (state) {
       case 'critical':
         return { primary: '#FF0055', glow: 'rgba(255, 0, 85, 0.5)', ring: 'rgba(255, 0, 85, 0.2)' };
+      case 'suspicious':
+        return { primary: '#F59E0B', glow: 'rgba(245, 158, 11, 0.5)', ring: 'rgba(245, 158, 11, 0.2)' };
       case 'safe':
         return { primary: '#10B981', glow: 'rgba(16, 185, 129, 0.5)', ring: 'rgba(16, 185, 129, 0.2)' };
       case 'investigating':
@@ -127,10 +129,10 @@ const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
           fill={colors.primary}
           animate={{
             scale: state === 'critical' ? 0.8 : 1,
-            cx: state === 'thinking' ? [45, 55, 45] : 50
+            x: state === 'thinking' ? [-5, 5, -5] : 0
           }}
           transition={{
-            cx: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+            x: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
           }}
           style={{ filter: `drop-shadow(0 0 15px ${colors.glow})` }}
         />
