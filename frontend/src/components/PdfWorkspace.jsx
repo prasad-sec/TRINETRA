@@ -52,10 +52,11 @@ export default function PdfWorkspace({ onAnalysisComplete, setEyeStatus, setIsIn
         onAnalysisComplete(data);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Investigation failed:", err);
       setError(err.message || 'Failed to analyze PDF file.');
       setIsLoading(false); // Only reset on error
       if (setIsInvestigating) setIsInvestigating(false);
+      if (typeof setInvestigationState === 'function') setInvestigationState('error');
     }
     // No finally block to reset `isLoading` on success, 
     // ensuring the UI stays in its "File Selected" disabled state until unmounted.

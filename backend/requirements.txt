@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+pymupdf
+pytesseract
+groq
+pydantic
+opencv-python
+numpy
+zxing-cpp

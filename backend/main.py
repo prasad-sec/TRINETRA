@@ -3,11 +3,11 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import investigate
+from api.investigate import investigate_router
 
 app = FastAPI(title="TRINETRA API", version="1.0")
 
-app.include_router(investigate.router)
+app.include_router(investigate_router, prefix="/api/investigate", tags=["investigate"])
 
 # Configure CORS
 app.add_middleware(
@@ -21,3 +21,6 @@ app.add_middleware(
 @app.get("/status")
 async def health_check():
     return {"system": "Active", "ai_core": "Cloud API Connected"}
+
+for route in app.routes:
+    print(f"Registered Route: {route.path} [{getattr(route, 'methods', '')}]")

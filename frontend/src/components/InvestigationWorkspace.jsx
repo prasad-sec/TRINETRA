@@ -5,6 +5,7 @@ import AIInvestigationResult from './AIInvestigationResult';
 import AIAssistantEye from './AIAssistantEye';
 import EmailWorkspace from './EmailWorkspace';
 import PdfWorkspace from './PdfWorkspace';
+import QrWorkspace from './QrWorkspace';
 
 const STAGES = [
   "Artifact Received",
@@ -306,7 +307,14 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                           setEyeStatus={() => {}}
                           setIsInvestigating={(status) => {
                             if (status) initInvestigation();
-                            else if (investigationState !== 'completed') setInvestigationState('error');
+                          }}
+                          setInvestigationState={setInvestigationState}
+                        />
+                      ) : activeTab === 'QR' ? (
+                        <QrWorkspace 
+                          onResult={handleAnalysisComplete}
+                          setIsInvestigating={(status) => {
+                            if (status) initInvestigation();
                           }}
                         />
                       ) : (

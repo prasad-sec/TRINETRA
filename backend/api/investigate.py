@@ -2,18 +2,37 @@ import email
 from email import policy
 import re
 import json
+import base64
 import pymupdf
-from PIL import Image
+import fitz  # PyMuPDF
+import cv2
+import numpy as np
+import zxingcpp
 import pytesseract
-from pyzbar.pyzbar import decode as qrcode_decode
 import io
-from fastapi import APIRouter, Form, File, UploadFile, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from groq import Groq
 from pydantic import BaseModel
 from engines.url_engine import URLEngine
 from ai.reasoning import AIEngine
 from schemas.investigation import InvestigationResult
 
-router = APIRouter(prefix="/api/investigate", tags=["Investigation Engine"])
+def extract_qr_from_image_bytes(image_bytes):
+    try:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return []
+        results = zxingcpp.read_barcodes(img)
+        if not results:
+            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            results = zxingcpp.read_barcodes(gray_img)
+        return [res.text for res in results if res.text] if results else []
+    except Exception:
+        return []
+
+router = APIRouter()
+investigate_router = router
 
 url_engine = URLEngine()
 ai_engine = AIEngine()
@@ -82,32 +101,50 @@ async def analyze_email(
                 if pdf_bytes:
                     try:
                         pdf_doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-                        for page in pdf_doc:
+                        for page_index in range(len(pdf_doc)):
+                            page = pdf_doc[page_index]
                             attached_pdf_text += page.get_text()
                             for link in page.get_links():
                                 if link.get("uri"):
                                     attached_pdf_urls.append(link.get("uri"))
+                                    
+                            image_list = page.get_images(full=True)
+                            for img in image_list:
+                                xref = img[0]
+                                base_image = pdf_doc.extract_image(xref)
+                                image_bytes = base_image["image"]
+                                qr_payloads = extract_qr_from_image_bytes(image_bytes)
+                                if qr_payloads:
+                                    attached_pdf_text += f"\n[HIDDEN QR CODE DETECTED IN PDF]: {' '.join(qr_payloads)}"
                     except Exception as e:
                         print(f"Failed to parse PDF attachment: {e}")
-            elif content_type in ['image/jpeg', 'image/png', 'image/webp']:
+            elif part.get_content_maintype() == 'image':
                 try:
                     img_bytes = part.get_payload(decode=True)
-                    image = Image.open(io.BytesIO(img_bytes))
+                    
+                    # 1. New QR Payload Extraction for Quishing (appending to body)
+                    qr_payloads = extract_qr_from_image_bytes(img_bytes)
+                    if qr_payloads:
+                        qr_alert = f"\n[HIDDEN QR CODE DETECTED IN EMAIL ATTACHMENT]: {' '.join(qr_payloads)}"
+                        plain_text += qr_alert
+                        html_text += qr_alert
 
-                    # 1. OCR Text Extraction
-                    ocr_text = pytesseract.image_to_string(image).strip()
-                    if ocr_text:
-                        attached_image_text.append(ocr_text)
+                    # 2. Original OCR & Image URL processing
+                    nparr = np.frombuffer(img_bytes, np.uint8)
+                    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    if img is not None:
+                        ocr_text = pytesseract.image_to_string(img).strip()
+                        if ocr_text:
+                            attached_image_text.append(ocr_text)
 
-                    # 2. QR Code Decoding
-                    qr_codes = qrcode_decode(image)
-                    for qr in qr_codes:
-                        qr_url = qr.data.decode('utf-8')
-                        attached_image_urls.append(qr_url)
+                        detector = cv2.QRCodeDetector()
+                        data, bbox, straight_qrcode = detector.detectAndDecode(img)
+                        if data:
+                            attached_image_urls.append(data)
 
                 except Exception as e:
                     print(f"Error processing image attachment: {e}")
-                    
+                
         body = plain_text if plain_text else html_text
                     
     elif type == 'text':
@@ -242,15 +279,32 @@ async def investigate_pdf(file: UploadFile = File(...)):
     pdf_urls = []
     
     try:
-        pdf_doc = pymupdf.open(stream=file_bytes, filetype="pdf")
-        for page in pdf_doc:
-            pdf_text += page.get_text()
-            for link in page.get_links():
-                uri = link.get("uri")
-                if uri:
-                    pdf_urls.append(uri)
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid PDF file format: {str(e)}")
+
+    extracted_text = ""
+    for page in doc:
+        extracted_text += page.get_text()
+        for link in page.get_links():
+            uri = link.get("uri")
+            if uri:
+                pdf_urls.append(uri)
+
+    # Safely extract embedded images & QR codes
+    for page_index in range(len(doc)):
+        page = doc[page_index]
+        for img in page.get_images(full=True):
+            try:
+                base_image = doc.extract_image(img[0])
+                image_bytes = base_image["image"]
+                qr_payloads = extract_qr_from_image_bytes(image_bytes)
+                if qr_payloads:
+                    extracted_text += f"\n[HIDDEN QR CODE payload]: {' '.join(qr_payloads)}"
+            except Exception:
+                continue
+
+    pdf_text = extracted_text
         
     payload_dict = {
         "pdf_text": pdf_text[:4000],
@@ -316,3 +370,128 @@ You MUST respond with ONLY a valid JSON object matching this schema:
         "body_snippet": pdf_text[:500] + "..." if len(pdf_text) > 500 else pdf_text,
         "ai_analysis": ai_response
     }
+
+@router.post("/qr")
+async def investigate_qr_endpoint(file: UploadFile = File(...)):
+    import cv2
+    import numpy as np
+    import zxingcpp
+    import base64
+    import json
+    import os
+    from fastapi import HTTPException
+    from groq import Groq
+
+    # 1. Reset the file buffer and read bytes
+    await file.seek(0)
+    contents = await file.read()
+    extracted_payload = None
+
+    # ==========================================
+    # STAGE 1: LOCAL DECODING (ZXING-CPP)
+    # ==========================================
+    try:
+        nparr = np.frombuffer(contents, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is not None:
+            results = zxingcpp.read_barcodes(img)
+            if results:
+                extracted_payload = results[0].text
+            else:
+                results_inv = zxingcpp.read_barcodes(cv2.bitwise_not(img))
+                if results_inv:
+                    extracted_payload = results_inv[0].text
+    except Exception as e:
+        print(f"Local CV parsing failed: {e}")
+
+    # ==========================================
+    # STAGE 2: GROQ VISION AI FALLBACK
+    # ==========================================
+    if not extracted_payload:
+        try:
+            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+            b64_img = base64.b64encode(contents).decode('utf-8')
+            vision_res = client.chat.completions.create(
+                model="llama-3.2-11b-vision-preview",
+                messages=[
+                    {"role": "user", "content": [
+                        {"type": "text", "text": "Extract the raw payload, URL, or payment string (e.g. upi://) from this QR code. Return ONLY the raw string. If unreadable, return FAILED."},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
+                    ]}
+                ],
+                temperature=0.1
+            )
+            vision_text = vision_res.choices[0].message.content.strip()
+            if "FAILED" not in vision_text.upper():
+                extracted_payload = vision_text
+        except Exception as e:
+            print(f"Groq Vision failed: {e}")
+
+    # ==========================================
+    # STAGE 3: THREAT ANALYSIS
+    # ==========================================
+    if not extracted_payload:
+        raise HTTPException(status_code=400, detail="Trinetra Vision Engine failed to decode this heavily obfuscated QR code.")
+
+    try:
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        prompt = f"""
+        You are an AI cybersecurity assistant for TRINETRA.
+        Analyze this extracted QR code payload: {extracted_payload}
+
+        CRITICAL RULES:
+        1. Speak to the end-user in simple, everyday language. Avoid complex technical jargon (like 'pa parameters' or 'tracking identifiers') unless it is an actual, confirmed threat.
+        2. If this is a standard UPI payment link (e.g., upi://pay...), recognize that it is completely normal. Standard tracking parameters in UPI/GPay links are harmless and expected.
+        3. Your reasoning and recommendations MUST match the verdict! If the verdict is SAFE, reassure the user it looks like a normal payment QR code. Do NOT tell them to cancel the transaction if it is safe.
+        4. If it is safe, your recommended action should simply be: "Verify the recipient's name on your UPI app before entering your PIN."
+
+        Respond ONLY with a valid JSON object matching this exact schema:
+        {{
+          "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
+          "threat_score": 0,
+          "confidence": 99,
+          "executive_summary": "A 2-sentence simple summary",
+          "ai_reasoning": "A simple, non-technical explanation of why it is safe or dangerous",
+          "indicators_of_compromise": [],
+          "recommended_actions": ["Simple step 1", "Simple step 2"]
+        }}
+        """
+        
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.3-70b-versatile",
+            temperature=0.1,
+            response_format={"type": "json_object"}
+        )
+        
+        # Parse the raw AI response
+        ai_parsed_data = json.loads(chat_completion.choices[0].message.content)
+        
+        # ==========================================
+        # BULLETPROOF DATA MAPPING
+        # ==========================================
+        executive_summary = ai_parsed_data.get("executive_summary", ai_parsed_data.get("summary", "Analysis completed successfully."))
+        ai_reasoning = ai_parsed_data.get("ai_reasoning", ai_parsed_data.get("reasoning", "No detailed reasoning provided."))
+        
+        evidence_dict = {
+            "Extracted_Payload": extracted_payload
+        }
+        
+        return {
+            "status": "success",
+            "investigation_type": "qr",
+            "ai_analysis": {
+                "verdict": ai_parsed_data.get("verdict", "UNKNOWN"),
+                "threat_score": ai_parsed_data.get("threat_score", 0),
+                "confidence": ai_parsed_data.get("confidence", 95),
+                "executive_summary": executive_summary,
+                "ai_reasoning": ai_reasoning,
+                "indicators_of_compromise": ai_parsed_data.get("indicators_of_compromise", []),
+                "recommended_actions": ai_parsed_data.get("recommended_actions", []),
+                "evidence_collected": evidence_dict
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Threat Engine Error: {str(e)}")

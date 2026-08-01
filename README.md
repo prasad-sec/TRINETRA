@@ -1,49 +1,73 @@
-# TRINETRA 👁️ 
-> AI-Powered Digital Threat Investigation Platform
+# TRINETRA
 
-## Overview
-TRINETRA is an AI-powered digital threat investigation platform designed to assist security analysts in rapidly dissecting suspicious digital artifacts. Rather than acting as a simple scanner or generic dashboard, TRINETRA provides a focused, intelligent Investigation Workspace that analyzes multiple threat vectors and delivers explainable AI reasoning. The system dynamically extracts actionable Indicators of Compromise (IoCs) and forensic Evidence directly from analyzed payloads, rendering them in an enterprise-grade digital investigation report.
+**Author**: Prasad Prashant Dabhekar (B.E. Information Technology)
 
-## Architecture
-The platform is built using a modern, domain-driven microservices-ready architecture:
-- **Frontend**: React + Vite + Tailwind CSS + Framer Motion (Frictionless, immersive UI featuring a strict investigation state machine, interactive artifact staging, and a decoupled visual pipeline controller for cinematic, GPU-accelerated storytelling animations)
-- **Backend**: FastAPI (High-performance asynchronous Python framework)
-- **State**: Stateless V1.0 (No database placeholders; PostgreSQL planned for V2.0)
+## Project Overview
+TRINETRA is an AI-powered digital artifact forensics platform designed to aid security analysts in inspecting and dissecting suspicious digital payloads. The system focuses on localized extraction and parsing of artifacts to minimize data exposure and API payload sizes before transmitting structured indicators to large language models for threat reasoning. 
 
-## Directory Structure
-```
-Trinetra/
-├── backend/            # FastAPI backend services
-│   ├── ai/             # Groq-powered AI reasoning engine
-│   ├── api/            # API routing and endpoints
-│   ├── engines/        # Deterministic extraction and analysis engines
-│   ├── schemas/        # Pydantic data validation schemas
-│   └── main.py         # Application entry point
-├── frontend/           # React frontend application
-│   ├── src/            # Source code for UI
-│   └── public/         # Static assets
-├── documents/          # Project documentation
-│   ├── srs.md          # Software Requirements Specification
-│   └── devlogs.md      # Development logs and technical decisions
-└── README.md           # This file
-```
+## Core Architecture
+The platform utilizes a decoupled client-server architecture:
+- **Frontend Client**: Built with React and Tailwind CSS. It implements an asynchronous state-machine UI for robust file staging, upload handling, and threat report rendering. 
+- **Backend Service**: Built on FastAPI. The backend orchestrates deterministic data extraction using Python-based forensic libraries before querying the AI engine. Local parsing ensures that large binary streams and non-actionable data are stripped out prior to LLM inference.
+- **AI Engine**: Utilizes the Groq API for rapid inference. Text and JSON data are analyzed by Llama-3.3-70b-versatile, while vision tasks and image fallback decoding are processed by Llama-3.2-11b-vision-preview and Qwen 3.6 27B.
 
-## Getting Started
+## Key Features
+- **URL Analysis**: Extracts domains, parameters, and redirects for threat evaluation.
+- **Email Forensics**: Parses `.eml` files to extract routing headers, SPF/DKIM data, embedded URLs, and attachments.
+- **PDF Scanning**: Analyzes PDF streams using PyMuPDF (`fitz`) to extract embedded links and text while bypassing malicious execution layers.
+- **QR Code (Quishing) Analysis**: Utilizes a multi-stage decoding pipeline featuring local OpenCV and `zxing-cpp` (with dark-mode matrix inversion), backed by a Groq Vision AI fallback for heavily stylized or logo-overlaid matrices (such as UPI/GPay codes). AI threat reasoning communicates in simple, end-user accessible language to reassure users on safe payment flows.
+- **Screenshot Vision OCR**: Extracts text locally via `pytesseract` to minimize API latency and rate limits prior to LLM analysis.
+
+## Tech Stack
+- **Frontend**: React, Tailwind CSS, Lucide Icons
+- **Backend**: Python 3.10+, FastAPI, Uvicorn
+- **Extraction Libraries**: `PyMuPDF` (fitz), `zxing-cpp`, `OpenCV` (cv2), `pytesseract`, native Python `email` module
+- **AI Integration**: Groq API (Llama-3.3-70b-versatile, Llama-3.2-11b-vision-preview, Qwen 3.6 27B)
+
+## Prerequisites
+- Node.js (v18+)
+- Python (3.10+)
+- Tesseract OCR engine installed at the OS level
+- Groq API Key
+
+## Installation & Run Instructions
 
 ### Backend Setup
-1. Navigate to the backend directory: `cd backend`
-2. Install dependencies: `pip install fastapi uvicorn sqlalchemy passlib[bcrypt] python-jose python-multipart pydantic-settings python-dotenv`
-3. Run the development server: `python -m uvicorn main:app --reload --env-file .env`
-   - The API will be available at `http://localhost:8000`
-   - Swagger documentation is automatically generated at `http://localhost:8000/docs`
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a virtual environment (optional but recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   # or
+   .\venv\Scripts\activate   # Windows
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   *(Ensure the system-level dependency for Tesseract OCR is installed prior to this step.)*
+4. Configure environment variables by creating a `.env` file:
+   ```
+   GROQ_API_KEY=your_api_key_here
+   ```
+5. Run the FastAPI server:
+   ```bash
+   python -m uvicorn main:app --reload --env-file .env
+   ```
 
-### Frontend Setup (V1.0 Frictionless Entry)
-1. Navigate to the frontend directory: `cd frontend`
-2. Install dependencies: `npm install`
-3. Start the dev server: `npm run dev`
-   - The application will be available at `http://localhost:5173`
-   - **Note**: Version 1.0 removes all authentication barriers to allow immediate, frictionless testing of the core Investigation Workspace.
-
-## Documentation
-For detailed system requirements and the V1.0 scope, refer to the [SRS Document](documents/srs.md). 
-For ongoing development updates and technical decisions, check the [Development Logs](documents/devlogs.md).
+### Frontend Setup
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install Node modules:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
