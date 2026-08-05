@@ -15,12 +15,23 @@ TRINETRA follows a modern, decoupled client-server architecture:
 - **Intelligence Layer (External API):** The Groq API routes structured text to Llama-3.3-70b-versatile and image streams to Llama-3.2-11b-vision-preview and Qwen 3.6 27B for fallback decoding, heuristic reasoning, and end-user accessible threat scoring.
 
 ### 3. Functional Requirements
-The system must support the following core forensic workspaces:
+
+#### 3.1 System Modules (Core Forensic Workspaces)
+The system must support the following core forensic workspaces and analytical modules:
 1. **URL Analysis:** Accept and evaluate URLs for domain reputation, redirects, and parameter anomalies.
 2. **Email Forensics:** Parse `.eml` and raw email text to analyze routing headers, sender authentication (SPF/DKIM/DMARC), and body content.
 3. **PDF Scanning:** Extract text and embedded URIs from PDF documents without executing active content.
 4. **QR Code (Quishing) Analysis:** Employ a multi-stage decoding architecture combining local OpenCV/ZXing-CPP matrix reading with Groq Vision AI fallback to reliably decode complex, branded, or inverted QR images. Translate technical findings into concise, non-technical guidance tailored for non-expert users while recognizing benign payment workflows (e.g., standard UPI links).
 5. **Screenshot Vision OCR:** Perform local OCR on image artifacts to extract embedded text for subsequent LLM evaluation.
+6. **Interactive Technical Documentation Hub:** Integrate an interactive deep-dive system module within the tactical dossier (SYSTEM.ABOUT) featuring expanding Vector Deep-Dive cards. When triggered, each analysis card expands into a dark glass drawer displaying the technical parser stack, threat metrics evaluated, and AI prompt strategy.
+
+#### 3.2 UI/UX Requirements
+- **Cybernetic Third Eye Splash Intro:** The application must present an immersive, animated Cybernetic Third Eye HUD emblem upon launch. Engineered with Framer Motion and custom SVG elements, it features rotating concentric rings and a mechanical eye aperture that scales open in tight synchronization with a rapid 3-second system diagnostic reveal.
+- **Tactical Digital Forensics OS Interface:** Maintain a high-impact cybersecurity aesthetic (`bg-zinc-950/75` with backdrop blur, bento box grids, and vibrant neon accents) designed for professional incident response environments.
+
+#### 3.3 Error Handling
+- **Early Return Protocol for Null QR Matrices:** The system must gracefully catch unreadable QR inputs and return a Safe/No-QR-Found JSON response to prevent infinite frontend loading.
+
 
 ### 4. Non-Functional Requirements
 - **Performance:** Local parsing operations (OCR, PDF extraction) must execute efficiently to minimize latency before the AI inference stage.

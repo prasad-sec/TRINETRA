@@ -11,6 +11,40 @@ The platform utilizes a decoupled client-server architecture:
 - **Backend Service**: Built on FastAPI. The backend orchestrates deterministic data extraction using Python-based forensic libraries before querying the AI engine. Local parsing ensures that large binary streams and non-actionable data are stripped out prior to LLM inference.
 - **AI Engine**: Utilizes the Groq API for rapid inference. Text and JSON data are analyzed by Llama-3.3-70b-versatile, while vision tasks and image fallback decoding are processed by Llama-3.2-11b-vision-preview and Qwen 3.6 27B.
 
+## System Architecture
+```mermaid
+graph TD
+    %% Frontend Layer
+    A[Trinetra UI <br/> React / Framer Motion] -->|Artifact Upload| B(FastAPI Backend)
+    
+    %% Processing Layer
+    B --> C{Vector Parsers}
+    C -->|URL| D[URLEngine & Validators]
+    C -->|Email| E[Python email / MIME]
+    C -->|PDF| F[PyMuPDF / PyTesseract]
+    C -->|QR Code| G[ZXing-CPP Matrix Decoder]
+    C -->|Images| H[Local Pre-processing]
+    
+    %% AI Intelligence Layer
+    D & E & F & G --> I[Groq LPU Inference]
+    H --> I
+    I -->|Llama-3.3-70B-Versatile| J[Threat Correlation & Analysis]
+    I -->|Llama-3.2-11B-Vision| J
+    
+    %% Output Layer
+    J -->|Strict JSON Schema| K[Verdict, Threat Score & Actionable Intel]
+    K -->|Render Tactical Dashboard| A
+    
+    classDef frontend fill:#0f172a,stroke:#06b6d4,stroke-width:2px,color:#fff
+    classDef backend fill:#18181b,stroke:#a1a1aa,stroke-width:1px,color:#fff
+    classDef ai fill:#000000,stroke:#f43f5e,stroke-width:2px,color:#fff
+    class A,K frontend
+    class B,C,D,E,F,G,H backend
+    class I,J ai
+```
+When digital artifact payloads are uploaded via the React frontend, the FastAPI server immediately directs them to specialized Python engines that perform localized deterministic parsing and preprocessing. Once the raw noise is stripped away, cleanly structured indicators and text streams are securely routed into Groq's Llama-3 inference models to evaluate threat metrics and return a standardized JSON verdict.
+
+
 ## Key Features
 - **URL Analysis**: Extracts domains, parameters, and redirects for threat evaluation.
 - **Email Forensics**: Parses `.eml` files to extract routing headers, SPF/DKIM data, embedded URLs, and attachments.

@@ -3,6 +3,7 @@ from email import policy
 import re
 import json
 import base64
+import os
 import pymupdf
 import fitz  # PyMuPDF
 import cv2
@@ -215,7 +216,7 @@ EXPECTED JSON SCHEMA:
   "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
   "threat_score": <int between 0-100, where 100 is critical danger>,
   "confidence": <int between 0-100>,
-  "executive_summary": "<A 2-sentence and concise level of primary reason summary the threat>",
+  "executive_summary": "<A concise 2-sentence executive summary explaining the primary threat or safe status>",
   "evidence_collected": {
     "sender": "<sender email or name if found>",
     "authentication": "<headers status>",
@@ -223,9 +224,9 @@ EXPECTED JSON SCHEMA:
     "urgency_level": "<High/Medium/Low>"
   },
   "indicators_of_compromise": [
-    "<List 'Creates 'DKIM 'URL account domain', e.g., failed' false flags found, points red regarding signature specific suspension', to unrelated urgency>"
+    "<List specific red flags found, e.g., 'DKIM signature failed', 'URL points to suspicious external domain', 'Creates false sense of urgency regarding account suspension'>"
   ],
-  "ai_reasoning": "<A TRINETRA based breaking conclusion detailed, down evidence. exactly explainable on paragraph provided reached the this why>",
+  "ai_reasoning": "<A detailed, explainable paragraph breaking down the evidence and explaining exactly why TRINETRA reached this conclusion based on the provided data>",
   "recommended_actions": [
     "<Specific recommendation 1>",
     "<Specific recommendation 2>"
@@ -333,7 +334,7 @@ You MUST respond with ONLY a valid JSON object matching this schema:
   "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
   "threat_score": <int between 0-100, where 100 is critical danger>,
   "confidence": <int between 0-100>,
-  "executive_summary": "<A 2-sentence and concise level of primary reason summary the threat>",
+  "executive_summary": "<A concise 2-sentence executive summary explaining the primary threat or safe status>",
   "evidence_collected": {
     "urls_found": "<number of URLs>",
     "urgency_level": "<High/Medium/Low>"
@@ -373,15 +374,6 @@ You MUST respond with ONLY a valid JSON object matching this schema:
 
 @router.post("/qr")
 async def investigate_qr_endpoint(file: UploadFile = File(...)):
-    import cv2
-    import numpy as np
-    import zxingcpp
-    import base64
-    import json
-    import os
-    from fastapi import HTTPException
-    from groq import Groq
-
     # 1. Reset the file buffer and read bytes
     await file.seek(0)
     contents = await file.read()
@@ -432,7 +424,22 @@ async def investigate_qr_endpoint(file: UploadFile = File(...)):
     # STAGE 3: THREAT ANALYSIS
     # ==========================================
     if not extracted_payload:
-        raise HTTPException(status_code=400, detail="Trinetra Vision Engine failed to decode this heavily obfuscated QR code.")
+        return {
+            "status": "success",
+            "investigation_type": "qr",
+            "ai_analysis": {
+                "verdict": "SAFE",
+                "threat_score": 0,
+                "confidence": 100,
+                "executive_summary": "No valid QR code was detected in the uploaded image.",
+                "ai_reasoning": "No valid QR code was detected in the uploaded image.",
+                "indicators_of_compromise": [],
+                "recommended_actions": [],
+                "evidence_collected": {
+                    "Extracted_Payload": "None detected"
+                }
+            }
+        }
 
     try:
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -495,3 +502,131 @@ async def investigate_qr_endpoint(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Threat Engine Error: {str(e)}")
+
+@router.post("/image")
+async def investigate_image_endpoint(file: UploadFile = File(...)):
+    await file.seek(0)
+    contents = await file.read()
+    
+    # 1. OCR & QR extraction (ZXing check & Tesseract OCR)
+    ocr_text = ""
+    qr_payloads = []
+    extracted_payload = None
+    try:
+        nparr = np.frombuffer(contents, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is not None:
+            ocr_text = pytesseract.image_to_string(img).strip()
+            qr_payloads = extract_qr_from_image_bytes(contents)
+            if qr_payloads:
+                extracted_payload = ", ".join(qr_payloads)
+            else:
+                # Fallback to dark-mode/inverted matrix evaluation via ZXing
+                results_inv = zxingcpp.read_barcodes(cv2.bitwise_not(img))
+                if results_inv:
+                    extracted_payload = ", ".join([res.text for res in results_inv if res.text])
+                    if extracted_payload:
+                        qr_payloads = [extracted_payload]
+    except Exception as e:
+        print(f"Image CV parsing failed: {e}")
+
+    # 2. Two-Stage AI Vision & Threat Analysis via Groq
+    try:
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        b64_img = base64.b64encode(contents).decode('utf-8')
+        
+        # STAGE 1: Vision AI (Elite Visual Intelligence Analyst)
+        vision_prompt = (
+            "You are an elite visual intelligence analyst for TRINETRA.\n"
+            "Analyze this uploaded image and inspect it for three specific things:\n\n"
+            "VISIBLE QR / BARCODES: Does this image contain a QR code or barcode?\n\n"
+            "AI-GENERATION SIGNS: Does this image show signs of AI generation or synthetic manipulation (e.g., unnatural textures, warped background details, synthetic lighting, AI-rendered text artifacts, ultra-smooth skin, or unrealistic geometry)?\n\n"
+            "VISUAL CONTEXT: Is it a screenshot of a conversation, an invoice/receipt, a social media post, a payment gateway, or general artwork?\n\n"
+            "Return a clear structural summary of your findings."
+        )
+        
+        extracted_context = "Visual context could not be determined."
+        try:
+            vision_res = client.chat.completions.create(
+                model="llama-3.2-11b-vision-preview",
+                messages=[
+                    {"role": "user", "content": [
+                        {"type": "text", "text": vision_prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
+                    ]}
+                ],
+                temperature=0.1
+            )
+            extracted_context = vision_res.choices[0].message.content.strip()
+        except Exception as vision_err:
+            print(f"Vision AI error: {vision_err}")
+            extracted_context = f"Vision analysis unavailable. Local OCR Text found: '{ocr_text}'"
+            
+        if ocr_text:
+            extracted_context += f"\n\n[LOCAL OCR TEXT EXTRACTED]: {ocr_text}"
+
+        # STAGE 2: Cybersecurity Threat Analyst Reasoning
+        threat_prompt = f"""
+You are an AI cybersecurity threat analyst for TRINETRA.
+Evaluate the provided evidence from an uploaded image artifact:
+
+DETECTED QR PAYLOAD: {extracted_payload or "None detected"}
+VISUAL CONTEXT & ANALYSIS: {extracted_context}
+
+EVALUATION GUIDELINES:
+
+QR CODE HANDLING: If a QR payload is present, evaluate the actual payload link (e.g., UPI link, URL). Do NOT mark a standard, normal UPI link as malicious simply because it appears inside an image.
+
+AI-GENERATED CONTENT: Identify if the image appears to be AI-generated or synthetically altered.
+
+CRITICAL: AI-generated images are NOT automatically malicious!
+
+If an image is AI-generated artwork, a meme, or a wallpaper, mark it as SAFE and note in ai_reasoning that it is AI-generated but poses no threat.
+
+Mark an AI image as SUSPICIOUS or MALICIOUS ONLY if it is being used deceptively (e.g., fake payment confirmation screenshots, fabricated identity documents, or deepfake phishing scams).
+
+PLAIN LANGUAGE: Explain your findings simply so any user can understand.
+
+Respond ONLY with a valid JSON object matching this exact schema:
+{{
+  "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
+  "threat_score": 0,
+  "confidence": 95,
+  "executive_summary": "A 2-sentence summary detailing what the image is and its safety status.",
+  "ai_reasoning": "Simple explanation. If AI-generated, state clearly whether it is harmless AI art or deceptive synthetic media.",
+  "indicators_of_compromise": ["Notable indicator 1", "Notable indicator 2"],
+  "recommended_actions": ["Simple action step 1", "Simple action step 2"]
+}}
+"""
+
+        chat_completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": threat_prompt}],
+            temperature=0.1,
+            response_format={"type": "json_object"}
+        )
+        ai_parsed_data = json.loads(chat_completion.choices[0].message.content)
+
+        return {
+            "status": "success",
+            "investigation_type": "image",
+            "extracted_text": ocr_text,
+            "qr_payloads": qr_payloads,
+            "ai_analysis": {
+                "verdict": ai_parsed_data.get("verdict", "UNKNOWN"),
+                "threat_score": ai_parsed_data.get("threat_score", 0),
+                "confidence": ai_parsed_data.get("confidence", 95),
+                "executive_summary": ai_parsed_data.get("executive_summary", "Image analysis completed."),
+                "ai_reasoning": ai_parsed_data.get("ai_reasoning", "No detailed reasoning provided."),
+                "indicators_of_compromise": ai_parsed_data.get("indicators_of_compromise", []),
+                "recommended_actions": ai_parsed_data.get("recommended_actions", []),
+                "evidence_collected": {
+                    "OCR_Text_Found": bool(ocr_text),
+                    "QR_Codes_Found": len(qr_payloads),
+                    "Extracted_Payload": extracted_payload or "None detected",
+                    "Image_Size_KB": round(len(contents) / 1024, 1)
+                }
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image Threat Engine Error: {str(e)}")

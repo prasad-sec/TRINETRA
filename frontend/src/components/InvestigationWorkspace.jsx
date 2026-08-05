@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, Shield, Link, Mail, FileText, QrCode, Monitor } from 'lucide-react';
+import { Crosshair, Shield, Link, Mail, FileText, QrCode, Image as ImageIcon } from 'lucide-react';
 import AIInvestigationResult from './AIInvestigationResult';
 import AIAssistantEye from './AIAssistantEye';
 import EmailWorkspace from './EmailWorkspace';
 import PdfWorkspace from './PdfWorkspace';
 import QrWorkspace from './QrWorkspace';
+import ImageWorkspace from './ImageWorkspace';
 
 const STAGES = [
   "Artifact Received",
@@ -34,7 +35,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
     { id: 'EMAIL', label: 'EMAIL', icon: Mail },
     { id: 'PDF', label: 'PDF', icon: FileText },
     { id: 'QR', label: 'QR CODE', icon: QrCode },
-    { id: 'SCREENSHOT', label: 'SCREENSHOT', icon: Monitor },
+    { id: 'IMAGES', label: 'IMAGES', icon: ImageIcon },
   ];
 
   useEffect(() => {
@@ -196,7 +197,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
           )}
 
           {/* Tab Navigation - Scrollable on mobile */}
-          <div className="w-full max-w-3xl flex items-center justify-start md:justify-between mb-12 md:mb-20 border-b border-theme-border z-10 overflow-x-auto scrollbar-hide snap-x gap-2 md:gap-0">
+          <div className="w-full max-w-3xl flex items-center justify-start md:justify-between mb-6 md:mb-8 border-b border-zinc-800 z-10 overflow-x-auto scrollbar-hide snap-x gap-1.5">
             {tabs.map(tab => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -205,14 +206,14 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                   key={tab.id}
                   onClick={() => { setActiveTab(tab.id); setErrorMsg(''); }}
                   disabled={isBusy}
-                  className={`flex-1 min-w-[100px] md:min-w-0 py-4 px-2 md:px-0 flex items-center justify-center gap-2 text-[10px] font-mono tracking-[0.2em] uppercase transition-all relative shrink-0 snap-center ${
-                    isActive ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'
+                  className={`flex-1 min-w-[90px] md:min-w-0 py-2 px-3 flex items-center justify-center gap-1.5 text-[11px] font-mono font-semibold tracking-wider uppercase transition-all relative shrink-0 snap-center rounded-none ${
+                    isActive ? 'text-cyan-400 bg-zinc-950/60 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-950/40 hover:backdrop-blur-xl'
                   } ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
                   <span className="inline-block">{tab.label}</span>
                   {isActive && (
-                    <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.5)]" />
+                    <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.8)]" />
                   )}
                 </button>
               );
@@ -257,8 +258,8 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                     className="flex flex-col justify-center w-full items-center text-center md:items-start md:text-left"
                   >
                     <div className="mb-6 md:mb-8 w-full">
-                      <h2 className="font-sans text-xl md:text-2xl font-semibold text-slate-100 mb-2">Investigation Workspace</h2>
-                      <p className="font-sans text-xs md:text-sm text-slate-400">Submit a suspicious digital artifact to begin an investigation.</p>
+                      <h2 className="font-mono text-xl md:text-2xl font-semibold text-zinc-100 mb-2 tracking-tight">Investigation Workspace</h2>
+                      <p className="font-mono text-xs md:text-sm text-zinc-400">Submit a suspicious digital artifact to begin an investigation.</p>
                     </div>
 
                     <div key={activeTab} className="w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
@@ -276,18 +277,18 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                                 setErrorMsg('');
                               }}
                               placeholder={tabs.find(t => t.id === 'URL').placeholder}
-                              className="w-full bg-theme-surface-2 border border-theme-border rounded-none py-4 md:py-5 pl-12 md:pl-14 pr-4 text-slate-100 font-mono text-sm md:text-base focus:outline-none focus:border-cyan-500/80 focus:bg-theme-surface focus:shadow-[inset_0_0_20px_rgba(0,240,255,0.05)] transition-all placeholder:text-slate-600 shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+                              className="w-full bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] rounded-none py-4 md:py-5 pl-12 md:pl-14 pr-4 text-zinc-100 font-mono text-sm md:text-base focus:outline-none focus:border-cyan-500/30 focus:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] transition-all placeholder:text-zinc-600"
                               onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
                             />
                           </div>
                           {errorMsg && (
-                            <div className="text-red-400 text-xs mt-1 text-center md:text-left">
+                            <div className="text-red-400 text-xs mt-1 text-center md:text-left font-mono">
                               {errorMsg}
                             </div>
                           )}
                           <button 
                             onClick={handleStartInvestigation} 
-                            className="w-full py-4 md:py-5 bg-cyan-900/20 border border-cyan-500/30 text-cyan-400 font-mono font-bold text-xs md:text-sm uppercase tracking-[0.3em] hover:bg-cyan-500/20 hover:border-cyan-400/80 hover:shadow-[0_0_25px_rgba(0,240,255,0.15)] rounded-none transition-all"
+                            className="w-full py-4 md:py-5 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-cyan-400 font-mono font-bold text-xs md:text-sm uppercase tracking-[0.3em] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] rounded-none transition-all"
                           >
                             BEGIN INVESTIGATION
                           </button>
@@ -317,11 +318,21 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                             if (status) initInvestigation();
                           }}
                         />
+                      ) : activeTab === 'IMAGES' ? (
+                        <ImageWorkspace 
+                          onResult={handleAnalysisComplete}
+                          setEyeStatus={() => {}}
+                          setIsInvestigating={(status) => {
+                            if (status) initInvestigation();
+                            else if (investigationState !== 'completed') setInvestigationState('error');
+                          }}
+                          setInvestigationState={setInvestigationState}
+                        />
                       ) : (
-                        <div className="flex flex-col items-center justify-center p-8 md:p-12 border border-dashed border-theme-border rounded-xl bg-theme-surface/30 w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
-                           <Shield className="w-10 h-10 md:w-12 md:h-12 text-slate-600 mb-4" />
-                           <h3 className="font-sans text-xs md:text-sm font-semibold tracking-widest text-slate-300 uppercase mb-2">Drop Artifact Here</h3>
-                           <p className="font-mono text-[10px] md:text-xs text-slate-500 text-center">Supported formats: Email, PDF, QR Code, Screenshot.</p>
+                        <div className="flex flex-col items-center justify-center p-8 md:p-12 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-all duration-500 hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.15)]">
+                           <Shield className="w-10 h-10 md:w-12 md:h-12 text-zinc-600 mb-4" />
+                           <h3 className="font-mono text-xs md:text-sm font-semibold tracking-widest text-zinc-300 uppercase mb-2">Drop Artifact Here</h3>
+                           <p className="font-mono text-[10px] md:text-xs text-zinc-500 text-center">Supported formats: Email, PDF, QR Code, Images.</p>
                         </div>
                       )}
                     </div>
@@ -356,10 +367,10 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                               <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-colors duration-300 ${
                                 isCompleted ? 'bg-cyan-500 shadow-[0_0_10px_rgba(0,240,255,0.8)]' : 
                                 isActive ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-pulse' : 
-                                'bg-theme-surface-2'
+                                'bg-zinc-800'
                               }`} />
                               {idx !== STAGES.length - 1 && (
-                                <div className={`w-px h-5 md:h-6 ${isCompleted ? 'bg-cyan-500/50' : 'bg-theme-surface-2'}`} />
+                                <div className={`w-px h-5 md:h-6 ${isCompleted ? 'bg-cyan-500/50' : 'bg-zinc-800'}`} />
                               )}
                             </div>
                             <span className={`font-mono text-[9px] md:text-xs uppercase tracking-wider transition-colors duration-300 ${

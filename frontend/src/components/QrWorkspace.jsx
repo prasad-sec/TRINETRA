@@ -72,7 +72,7 @@ export default function QrWorkspace({ onResult, setEyeStatus, setIsInvestigating
     } catch (err) {
       console.error("Investigation failed:", err);
       setError(err.message || "An unexpected error occurred.");
-      setIsLoading(false); // Only reset on error
+      setIsLoading(false);
       if (setIsInvestigating) setIsInvestigating(false);
       if (typeof setInvestigationState === "function") setInvestigationState("error");
     }

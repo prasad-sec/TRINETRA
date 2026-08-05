@@ -24,7 +24,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
   }, []);
 
   useEffect(() => {
-    const duration = isFirstLaunch ? 6000 : 1000;
+    const duration = isFirstLaunch ? 5000 : 1000;
     
     // Log sequence for first launch
     if (isFirstLaunch) {
@@ -95,87 +95,186 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
 
       <div className="relative flex flex-col items-center w-full max-w-2xl px-6 z-10">
         
-        {/* The "TRINETRA" Sacred Geometry Core */}
+        {/* ── CYBERNETIC THIRD EYE HUD ── */}
         <div className="relative flex items-center justify-center w-64 h-64 mb-12">
-          {/* LAYER 1: Outer Illuminati Triangle (Slow Reverse Spin) */}
-          <motion.svg 
-            viewBox="0 0 100 100" 
-            className="absolute inset-0 w-full h-full text-cyan-500/30 drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+
+          {/* LAYER 0: faint radial ambient behind everything */}
+          <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.08)_0%,transparent_70%)] pointer-events-none" />
+
+          {/* LAYER 1: Outer HUD triangle with corner crosshairs — slow counter-clockwise rotation */}
+          <motion.svg
+            viewBox="0 0 200 200"
+            className="absolute inset-0 w-full h-full"
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1, rotate: -360 }}
+            transition={{
+              opacity: { duration: 0.8, delay: 0.2 },
+              scale: { duration: 0.8, delay: 0.2 },
+              rotate: { duration: 28, repeat: Infinity, ease: 'linear', delay: 0 }
+            }}
           >
-            <motion.polygon 
-              points="50,5 88.97,72.5 11.03,72.5" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="0.5" 
-              strokeDasharray="2 2" 
-              animate={{ 
-                opacity: [0.3, 1, 0.3], 
-                filter: [
-                  "drop-shadow(0 0 5px rgba(34,211,238,0.4))", 
-                  "drop-shadow(0 0 15px rgba(34,211,238,1))", 
-                  "drop-shadow(0 0 5px rgba(34,211,238,0.4))"
-                ] 
-              }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            {/* Main triangle */}
+            <polygon
+              points="100,14 187,155 13,155"
+              fill="none"
+              stroke="rgba(6,182,212,0.35)"
+              strokeWidth="0.8"
+              strokeDasharray="4 3"
             />
-            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.2" />
+            {/* Corner crosshair — top */}
+            <line x1="100" y1="4" x2="100" y2="24" stroke="rgba(6,182,212,0.55)" strokeWidth="0.8" />
+            <line x1="90" y1="14" x2="110" y2="14" stroke="rgba(6,182,212,0.55)" strokeWidth="0.8" />
+            {/* Corner crosshair — bottom-right */}
+            <line x1="187" y1="145" x2="187" y2="165" stroke="rgba(6,182,212,0.55)" strokeWidth="0.8" />
+            <line x1="177" y1="155" x2="197" y2="155" stroke="rgba(6,182,212,0.55)" strokeWidth="0.8" />
+            {/* Corner crosshair — bottom-left */}
+            <line x1="13" y1="145" x2="13" y2="165" stroke="rgba(6,182,212,0.55)" strokeWidth="0.8" />
+            <line x1="3" y1="155" x2="23" y2="155" stroke="rgba(6,182,212,0.55)" strokeWidth="0.8" />
+            {/* Circumscribed faint circle */}
+            <circle cx="100" cy="100" r="94" fill="none" stroke="rgba(6,182,212,0.08)" strokeWidth="0.5" />
           </motion.svg>
 
-          {/* LAYER 2: Inner Astrolabe Rings (Fast Spin) */}
-          <motion.div 
-            className="absolute w-40 h-40 rounded-full border border-cyan-400/40 border-t-cyan-300"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.div 
-            className="absolute w-32 h-32 rounded-full border border-purple-500/40 border-b-purple-400"
-            animate={{ rotate: -360 }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          {/* LAYER 2: Outer HUD ring — clockwise */}
+          <motion.div
+            className="absolute w-44 h-44 rounded-full"
+            style={{
+              border: '0.8px solid rgba(6,182,212,0.30)',
+              borderTopColor: 'rgba(6,182,212,0.80)',
+              boxShadow: '0 0 8px rgba(6,182,212,0.15)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, rotate: 360 }}
+            transition={{
+              opacity: { duration: 0.6, delay: 0.5 },
+              rotate: { duration: 8, repeat: Infinity, ease: 'linear' }
+            }}
           />
 
-          {/* LAYER 3: The Mecha/Anime Eye Core */}
-          <motion.svg 
-            viewBox="0 0 100 100" 
-            className="absolute w-28 h-28 drop-shadow-[0_0_20px_rgba(0,240,255,0.9)]"
+          {/* Tick marks on outer ring */}
+          <motion.svg
+            viewBox="0 0 200 200"
+            className="absolute w-44 h-44 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.45, rotate: 360 }}
+            transition={{
+              opacity: { duration: 0.6, delay: 0.5 },
+              rotate: { duration: 8, repeat: Infinity, ease: 'linear' }
+            }}
           >
-            {/* Sharp, angular eyelid (Anime/Mecha style) */}
+            {Array.from({ length: 24 }).map((_, i) => {
+              const angle = (i / 24) * 2 * Math.PI;
+              const r = 90, inner = i % 6 === 0 ? 80 : 85;
+              return (
+                <line
+                  key={i}
+                  x1={100 + r * Math.cos(angle)}
+                  y1={100 + r * Math.sin(angle)}
+                  x2={100 + inner * Math.cos(angle)}
+                  y2={100 + inner * Math.sin(angle)}
+                  stroke="rgba(6,182,212,0.9)"
+                  strokeWidth={i % 6 === 0 ? '1.5' : '0.7'}
+                />
+              );
+            })}
+          </motion.svg>
+
+          {/* LAYER 3: Inner HUD ring — counter-clockwise */}
+          <motion.div
+            className="absolute w-32 h-32 rounded-full"
+            style={{
+              border: '0.6px solid rgba(139,92,246,0.30)',
+              borderBottomColor: 'rgba(139,92,246,0.75)',
+              boxShadow: '0 0 6px rgba(139,92,246,0.10)'
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, rotate: -360 }}
+            transition={{
+              opacity: { duration: 0.6, delay: 0.7 },
+              rotate: { duration: 5, repeat: Infinity, ease: 'linear' }
+            }}
+          />
+
+          {/* LAYER 4: Central Mecha Iris Eye */}
+          <motion.svg
+            viewBox="0 0 100 100"
+            className="absolute w-24 h-24"
+            style={{ filter: 'drop-shadow(0 0 12px rgba(6,182,212,0.6))' }}
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.9, ease: 'backOut' }}
+          >
+            {/* Eyelid aperture: opens from flat line to a sharp hexagonal eye */}
             <motion.path
+              fill="rgba(0,0,0,0.6)"
+              stroke="#00F0FF"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              initial={{ d: 'M 12 50 L 50 50 L 88 50 L 50 50 Z' }}
+              animate={{ d: 'M 12 50 L 28 32 L 50 26 L 72 32 L 88 50 L 72 68 L 50 74 L 28 68 Z' }}
+              transition={{ duration: 0.7, delay: 1.0, ease: 'backOut' }}
+            />
+
+            {/* Iris ring — segmented dashes */}
+            <motion.circle
+              cx="50" cy="50" r="14"
               fill="none"
               stroke="#00F0FF"
-              strokeWidth="2"
-              initial={{ d: "M 10 50 L 50 50 L 90 50" }} 
-              animate={{ d: "M 10 50 L 30 30 L 70 30 L 90 50 L 70 70 L 30 70 Z" }}
-              transition={{ duration: 0.6, ease: "backOut", delay: 1 }}
+              strokeWidth="1.5"
+              strokeDasharray="5 2"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                rotate: [0, 360]
+              }}
+              transition={{
+                opacity: { duration: 0.4, delay: 1.5 },
+                scale: { duration: 0.4, delay: 1.5 },
+                rotate: { duration: 12, repeat: Infinity, ease: 'linear', delay: 1.5 }
+              }}
+              style={{ transformOrigin: '50px 50px' }}
             />
-            
-            {/* Inner Iris (Only visible when open) */}
+
+            {/* Pupil core — neon cyan pulse */}
             <motion.circle
-              cx="50"
-              cy="50"
-              r="12"
-              fill="none"
-              stroke="#00F0FF"
-              strokeWidth="2"
-              strokeDasharray="4 2"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 1.5 }}
+              cx="50" cy="50" r="5"
+              fill="#00F0FF"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{
+                opacity: [0, 1, 0.7, 1],
+                scale: [0, 1.2, 1, 1.1],
+                filter: [
+                  'drop-shadow(0 0 4px rgba(6,182,212,0.5))',
+                  'drop-shadow(0 0 14px rgba(6,182,212,1))',
+                  'drop-shadow(0 0 8px rgba(6,182,212,0.7))',
+                  'drop-shadow(0 0 14px rgba(6,182,212,1))'
+                ]
+              }}
+              transition={{
+                opacity: { duration: 1.2, delay: 1.7, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' },
+                scale: { duration: 1.2, delay: 1.7, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' },
+                filter: { duration: 1.2, delay: 1.7, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }
+              }}
             />
-            
-            {/* Glowing Pupil */}
-            <motion.circle
-              cx="50"
-              cy="50"
-              r="4"
-              fill="transparent"
-              stroke="#00F0FF"
-              strokeWidth="0.5"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 1.5 }}
-            />
+
+            {/* 4 angular tick marks at iris compass points */}
+            {[0, 90, 180, 270].map((deg, i) => {
+              const rad = (deg * Math.PI) / 180;
+              return (
+                <motion.line
+                  key={i}
+                  x1={50 + 18 * Math.cos(rad)}
+                  y1={50 + 18 * Math.sin(rad)}
+                  x2={50 + 24 * Math.cos(rad)}
+                  y2={50 + 24 * Math.sin(rad)}
+                  stroke="#00F0FF"
+                  strokeWidth="1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.7 }}
+                  transition={{ duration: 0.3, delay: 1.6 + i * 0.05 }}
+                />
+              );
+            })}
           </motion.svg>
         </div>
 
@@ -197,7 +296,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 3.5, duration: 1.2, ease: "easeOut" }}
+            transition={{ delay: 2.5, duration: 1.2, ease: "easeOut" }}
           >
             <h1 className="text-4xl md:text-5xl font-sans font-black tracking-[0.5em] text-slate-100 uppercase drop-shadow-[0_0_25px_rgba(0,240,255,0.8)] ml-[0.5em]">
               TRINETRA
@@ -208,7 +307,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
             className="text-xs text-[#00F0FF]/80 tracking-[0.4em] font-sans font-semibold uppercase mt-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 4.2, duration: 0.8 }}
+            transition={{ delay: 3.2, duration: 0.8 }}
           >
             Seeing Beyond Deception
           </motion.h2>
