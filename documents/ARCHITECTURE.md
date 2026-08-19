@@ -99,7 +99,7 @@ The application layer is powered by a **FastAPI** service engineered for non-blo
 The intelligence layer decouples complex syntactic feature data from computational evaluation by routing pre-processed JSON structures directly into high-speed inference engines hosted on the **Groq Tensor Streaming Processor (LPU™)** infrastructure. This guarantees sub-second reasoning even when executing deep contextual heuristics across dense threat payloads.
 
 ### 5.1 Model Roles & Specialization
-- **Primary Reasoning Model (`Llama-3.3-70B-Versatile`):** Assigned to text, network telemetry, header evaluation, and structural code analysis. It correlates extracted IoCs against deceptive framing mechanics and financial fraud archetypes, synthesizing multi-vector evidence into an objective threat score (0–100) and an executive summary formatted in clear, professional terminology.
+- **Primary Reasoning Model (`Llama-3.1-70B-Versatile`):** Assigned to text, network telemetry, header evaluation, and structural code analysis. It correlates extracted IoCs against deceptive framing mechanics and financial fraud archetypes, synthesizing multi-vector evidence into an objective threat score (0–100) and an executive summary formatted in clear, professional terminology.
 - **Vision & Synthetic Media Engine (`Llama-3.2-11B-Vision-Preview` & `Qwen-3.6-27B`):** Activated for direct RGB tensor evaluation during image investigations and Stage-2 QR visual fallback decodes. Analyzes lighting geometry, font kerning inconsistencies, interface forgery markers, and adversarial QR logo manipulations that elude standard algorithmic barcode readers.
 
 ### 5.2 Deterministic Output Enforcement via Strict JSON Schemas

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ── Deep-dive content for each vector ──────────────────────────────────────────
 const VECTOR_DEEP_DIVE = {
   'URL Intelligence': {
-    stack: ['Python URLEngine (custom parser)', 'tldextract · validators · ipaddress stdlib', 'Groq → Llama-3.3-70B-Versatile'],
+    stack: ['Python URLEngine (custom parser)', 'tldextract · validators · ipaddress stdlib', 'Groq → Llama-3.1-70B-Versatile'],
     metrics: [
       'Domain age & reputation via WHOIS heuristics',
       'TLD risk scoring (e.g., .xyz, .tk, .top flagged)',
@@ -17,7 +17,7 @@ const VECTOR_DEEP_DIVE = {
     promptStrategy: 'Groq receives a structured IOC dictionary extracted by URLEngine and reasons over domain, path, parameters, and entropy signals to produce a verdict with plain-language justification.',
   },
   'Email Forensics': {
-    stack: ['Python email stdlib (RFC 2822 / MIME)', 'PyMuPDF · pytesseract · zxing-cpp (attachment parsing)', 'Groq → Llama-3.3-70B-Versatile'],
+    stack: ['Python email stdlib (RFC 2822 / MIME)', 'PyMuPDF · pytesseract · zxing-cpp (attachment parsing)', 'Groq → Llama-3.1-70B-Versatile'],
     metrics: [
       'SPF / DKIM / DMARC header authentication status',
       'From-domain vs. Return-Path mismatch detection',
@@ -30,7 +30,7 @@ const VECTOR_DEEP_DIVE = {
     promptStrategy: 'A structured JSON payload (headers, body, URLs, attachment extracts) is passed to Groq, which applies social-engineering and authentication analysis rules to produce a comprehensive phishing verdict.',
   },
   'PDF Document Inspector': {
-    stack: ['PyMuPDF (fitz) for stream extraction', 'zxing-cpp for embedded QR decoding', 'Groq → Llama-3.3-70B-Versatile'],
+    stack: ['PyMuPDF (fitz) for stream extraction', 'zxing-cpp for embedded QR decoding', 'Groq → Llama-3.1-70B-Versatile'],
     metrics: [
       'Embedded hyperlink extraction across all pages',
       'Suspicious URI scheme detection (e.g., javascript:, data:)',
@@ -109,7 +109,7 @@ const COLOR_MAP = {
 };
 
 const SPECS = [
-  { icon: Cpu,  label: 'PRIMARY MODEL',      value: 'Llama-3.3-70B-Versatile'   },
+  { icon: Cpu,  label: 'PRIMARY MODEL',      value: 'Llama-3.1-70B-Versatile'   },
   { icon: Eye,  label: 'VISION ENGINE',      value: 'Llama-3.2-11B-Vision'      },
   { icon: Zap,  label: 'INFERENCE PROVIDER', value: 'Groq LPU™ (Low Latency)'  },
 ];
@@ -170,7 +170,7 @@ const DeepDiveDrawer = ({ vector, onBack }) => {
       </div>
 
       {/* Dark glass drawer panel */}
-      <div className={`rounded-xl border ${c.activeBorder} ${c.activeShadow} bg-zinc-950/80 backdrop-blur-2xl border-white/10 overflow-hidden`}>
+      <div className={`rounded-xl border ${c.activeBorder} ${c.activeShadow} bg-zinc-950/80 backdrop-blur-md md:backdrop-blur-2xl border-white/10 overflow-hidden`}>
         {/* Accent top line matching vector colour */}
         <div className={`h-px w-full bg-gradient-to-r from-transparent ${c.icon.replace('text-', 'via-')} to-transparent opacity-60`} />
 
@@ -228,7 +228,7 @@ const AboutHologram = ({ onClose }) => {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
         onClick={onClose}
-        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 md:p-8 overflow-y-auto overflow-x-hidden"
+        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 md:p-8 overflow-y-auto overflow-x-hidden transform-gpu will-change-[opacity]"
       >
         {/* Modal Panel */}
         <motion.div
@@ -238,7 +238,7 @@ const AboutHologram = ({ onClose }) => {
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-3xl my-auto bg-zinc-950/75 backdrop-blur-2xl border border-zinc-800/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_0_50px_rgba(6,182,212,0.15)] rounded-2xl overflow-hidden flex flex-col"
+          className="relative w-full max-w-3xl my-auto bg-zinc-950/75 backdrop-blur-md md:backdrop-blur-2xl border border-zinc-800/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_0_50px_rgba(6,182,212,0.15)] rounded-2xl overflow-hidden flex flex-col transform-gpu will-change-transform will-change-[opacity]"
         >
           {/* Top accent line */}
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />

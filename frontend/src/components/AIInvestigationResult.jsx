@@ -76,11 +76,16 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
     conclusion = `Based on the automated investigation, this artifact has been designated as ${activeStyle.label}. ${actions && actions.length > 0 ? "Please follow the recommended actions provided above." : "No immediate remediation steps are required at this time."}`;
   }
 
+  const isImage = apiResult?.investigation_type === 'image' || activeTab?.toLowerCase() === 'image';
+  const mediaOrigin = reportData.media_origin || 'UNCERTAIN';
+  const syntheticProb = reportData.synthetic_probability || 0;
+  const syntheticIndicators = reportData.synthetic_indicators || [];
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-8 mb-24 flex flex-col relative bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl rounded-sm border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] shadow-2xl shadow-black/80"
+      className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-8 mb-24 flex flex-col relative bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl rounded-sm border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] shadow-2xl shadow-black/80 transform-gpu will-change-transform will-change-[opacity]"
     >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/10 pb-6 mb-8 shrink-0 gap-4">
@@ -91,7 +96,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
         <div className="flex gap-4">
           <button 
             onClick={onReset}
-            className="px-6 py-3 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-zinc-300 font-mono text-xs font-bold uppercase tracking-widest hover:border-cyan-500/30 hover:text-cyan-400 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-none flex items-center gap-2"
+            className="px-6 py-3 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-zinc-300 font-mono text-xs font-bold uppercase tracking-widest hover:border-cyan-500/30 hover:text-cyan-400 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-none flex items-center gap-2"
           >
             <X className="w-4 h-4" /> Close Report
           </button>
@@ -101,7 +106,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
       <div className="flex-1 overflow-y-auto w-full pb-8 pr-2 scrollbar-hide space-y-8">
         
         {/* ================= 2. Executive Summary ================= */}
-        <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+        <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
           <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-3 flex items-center gap-2">
             <Activity className="w-4 h-4 text-cyan-500"/> Executive Summary
           </h2>
@@ -110,22 +115,22 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </p>
         </div>
 
-        {/* ================= METRICS GRID (1, 3, 4) ================= */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+        {/* ================= METRICS GRID (1, 3, 4, Media) ================= */}
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${isImage ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6 w-full`}>
           
           {/* ================= 1. Investigation Verdict ================= */}
-          <div className={`md:col-span-1 flex flex-col bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border ${activeStyle.border} rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] transition-all hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(239,68,68,0.15)]`}>
+          <div className={`md:col-span-1 flex flex-col bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border ${activeStyle.border} rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] transition-all hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(239,68,68,0.15)]`}>
             <div className="flex items-center justify-between mb-4 shrink-0">
               <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Verdict</span>
               <ShieldAlert className="w-5 h-5" style={{ color: activeStyle.icon }} />
             </div>
-            <div className="flex-1 flex flex-col justify-center items-center">
-              <div className={`font-mono text-4xl lg:text-5xl font-bold mb-2 ${activeStyle.text} tracking-wider`}>{activeStyle.label}</div>
+            <div className="flex-1 flex flex-col justify-center items-center w-full px-3">
+              <div className={`font-mono text-2xl font-bold mb-2 ${activeStyle.text} tracking-wide break-words text-center`}>{activeStyle.label}</div>
             </div>
           </div>
 
           {/* ================= 3. Threat Assessment ================= */}
-          <div className="md:col-span-1 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+          <div className="md:col-span-1 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <div className="flex items-center justify-between mb-4 shrink-0">
               <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Threat Assessment</span>
               <Crosshair className="w-5 h-5 text-cyan-500" />
@@ -139,8 +144,8 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
             </div>
           </div>
           
-          {/* ================= 4. Classification Confidence ================= */}
-          <div className="md:col-span-1 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+        {/* ================= 4. Classification Confidence ================= */}
+          <div className="md:col-span-1 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
              <div className="flex items-center justify-between mb-4 shrink-0 z-10">
               <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Confidence</span>
               <Search className="w-5 h-5 text-cyan-500" />
@@ -172,11 +177,52 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
               )}
             </div>
           </div>
+
+          {/* ================= Media Origin Analysis (Image Only) ================= */}
+          {isImage && (
+            <div className={`md:col-span-1 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border ${mediaOrigin === 'AI-GENERATED' ? 'border-fuchsia-500/30' : 'border-cyan-500/30'} rounded-sm p-6 flex flex-col relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300`}>
+              <div className="flex items-center justify-between mb-4 shrink-0 z-10">
+                <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Media Origin</span>
+                <Search className={`w-5 h-5 ${mediaOrigin === 'AI-GENERATED' ? 'text-fuchsia-500' : 'text-cyan-500'}`} />
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center z-10 w-full">
+                <div className="font-mono text-lg lg:text-xl font-bold tracking-wider mb-2 text-center" style={{ color: mediaOrigin === 'AI-GENERATED' ? '#d946ef' : '#06b6d4' }}>
+                  {mediaOrigin}
+                </div>
+                
+                {mediaOrigin === 'AI-GENERATED' && (
+                  <div className="w-full mt-2">
+                    <div className="flex justify-between text-[10px] text-zinc-400 font-mono mb-1">
+                      <span>SYNTHETIC PROBABILITY</span>
+                      <span className="text-fuchsia-400">{syntheticProb}%</span>
+                    </div>
+                    <div className="w-full bg-zinc-900/80 rounded-full h-1.5 border border-white/5">
+                      <div className="bg-fuchsia-500 h-1.5 rounded-full shadow-[0_0_8px_rgba(217,70,239,0.6)]" style={{ width: `${syntheticProb}%` }}></div>
+                    </div>
+                  </div>
+                )}
+
+                {syntheticIndicators && syntheticIndicators.length > 0 && (
+                  <div className="mt-4 w-full text-left">
+                    <div className="text-[10px] uppercase tracking-widest text-zinc-500 mb-2 border-b border-white/10 pb-1 font-mono">Indicators</div>
+                    <ul className="font-mono text-[9px] text-zinc-300 space-y-1 w-full max-h-16 overflow-y-auto scrollbar-hide">
+                      {syntheticIndicators.map((ind, idx) => (
+                        <li key={idx} className="flex gap-2">
+                          <span className="text-fuchsia-500">{'>'}</span> 
+                          <span className="truncate" title={ind}>{ind}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ================= 5. Key Findings ================= */}
         {keyFindings && keyFindings.length > 0 && (
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500"/> Key Findings
             </h3>
@@ -190,7 +236,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           {/* ================= 6. Evidence Collected ================= */}
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
               <Database className="w-4 h-4 text-cyan-500"/> Evidence Collected
             </h3>
@@ -211,7 +257,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
 
           {/* ================= 7. Indicators of Compromise (IoCs) ================= */}
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-rose-400"/> Indicators of Compromise
             </h3>
@@ -246,7 +292,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         {/* ================= 8. AI Analyst Reasoning ================= */}
         {aiReasoning ? (
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 md:p-8 relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300">
+          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 md:p-8 relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300">
             <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-zinc-900 via-cyan-500 to-zinc-900 opacity-80 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
             <h3 className="font-mono text-xs font-bold text-cyan-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2 shrink-0">
                <Cpu className="w-4 h-4" /> AI Investigation Reasoning
@@ -256,14 +302,14 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
             </div>
           </div>
         ) : (
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 flex items-center justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex items-center justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
             <span className="font-mono text-sm italic text-zinc-600">No AI analyst reasoning provided.</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           {/* ================= 9. Recommended Actions ================= */}
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2 shrink-0">
               <CheckCircle className="w-4 h-4 text-emerald-500"/> Recommended Actions
             </h3>
@@ -281,7 +327,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
           
           {/* ================= 10. Investigation Conclusion ================= */}
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2 shrink-0">
               <FileText className="w-4 h-4 text-cyan-500"/> Investigation Conclusion
             </h3>

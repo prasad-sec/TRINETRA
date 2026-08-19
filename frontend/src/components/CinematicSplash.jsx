@@ -82,7 +82,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
   // Full 6-second cinematic launch
   return (
     <motion.div
-      className="fixed inset-0 z-50 bg-theme-bg flex flex-col items-center justify-center overflow-hidden pointer-events-none"
+      className="fixed inset-0 z-50 bg-theme-bg flex flex-col items-center justify-center overflow-hidden pointer-events-none transform-gpu"
       initial={{ opacity: 1, scale: 1 }}
       animate={containerControls}
       exit={{ opacity: 0 }}
@@ -104,7 +104,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
           {/* LAYER 1: Outer HUD triangle with corner crosshairs — slow counter-clockwise rotation */}
           <motion.svg
             viewBox="0 0 200 200"
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full transform-gpu will-change-transform will-change-[opacity]"
             initial={{ opacity: 0, scale: 0.85 }}
             animate={{ opacity: 1, scale: 1, rotate: -360 }}
             transition={{
@@ -136,7 +136,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
 
           {/* LAYER 2: Outer HUD ring — clockwise */}
           <motion.div
-            className="absolute w-44 h-44 rounded-full"
+            className="absolute w-44 h-44 rounded-full transform-gpu will-change-transform will-change-[opacity]"
             style={{
               border: '0.8px solid rgba(6,182,212,0.30)',
               borderTopColor: 'rgba(6,182,212,0.80)',
@@ -153,7 +153,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
           {/* Tick marks on outer ring */}
           <motion.svg
             viewBox="0 0 200 200"
-            className="absolute w-44 h-44 pointer-events-none"
+            className="absolute w-44 h-44 pointer-events-none transform-gpu will-change-transform will-change-[opacity]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.45, rotate: 360 }}
             transition={{
@@ -180,7 +180,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
 
           {/* LAYER 3: Inner HUD ring — counter-clockwise */}
           <motion.div
-            className="absolute w-32 h-32 rounded-full"
+            className="absolute w-32 h-32 rounded-full transform-gpu will-change-transform will-change-[opacity]"
             style={{
               border: '0.6px solid rgba(139,92,246,0.30)',
               borderBottomColor: 'rgba(139,92,246,0.75)',
@@ -197,7 +197,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
           {/* LAYER 4: Central Mecha Iris Eye */}
           <motion.svg
             viewBox="0 0 100 100"
-            className="absolute w-24 h-24"
+            className="absolute w-24 h-24 transform-gpu will-change-transform will-change-[opacity]"
             style={{ filter: 'drop-shadow(0 0 12px rgba(6,182,212,0.6))' }}
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}

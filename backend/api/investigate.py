@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import email
 from email import policy
 import re
@@ -11,7 +14,11 @@ import numpy as np
 import zxingcpp
 import pytesseract
 import io
+import tempfile
+import c2pa
+from PIL import Image, ExifTags, ImageChops
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi.concurrency import run_in_threadpool
 from groq import Groq
 from pydantic import BaseModel
 from engines.url_engine import URLEngine
@@ -31,6 +38,89 @@ def extract_qr_from_image_bytes(image_bytes):
         return [res.text for res in results if res.text] if results else []
     except Exception:
         return []
+
+def extract_exif_data(image_bytes):
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        exif_data = img.getexif()
+        if not exif_data:
+            return {}
+        
+        exif_dict = {}
+        for tag_id, value in exif_data.items():
+            tag = str(ExifTags.TAGS.get(tag_id, tag_id))
+            
+            # Filter EXIF to prevent context bloat
+            if tag in ["MakerNote", "UserComment", "ICCProfile"]:
+                continue
+                
+            if isinstance(value, bytes):
+                try:
+                    # Decode strictly, discard if it fails or contains many non-printables
+                    value = value.decode('utf-8')
+                    if sum(1 for c in value if ord(c) < 32 and c not in '\n\r\t') > len(value) * 0.1:
+                        continue
+                except Exception:
+                    continue
+            else:
+                value = str(value)
+                # Heuristic to filter out large binary/hex strings
+                if len(value) > 200 and not any(c.isspace() for c in value[:50]):
+                    continue
+                    
+            exif_dict[tag] = value
+        return exif_dict
+    except Exception as e:
+        logger.error(f"EXIF extraction failed: {e}")
+        return {}
+
+def extract_c2pa_data(image_bytes, suffix=".jpg"):
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+            tmp_file.write(image_bytes)
+            tmp_file_path = tmp_file.name
+            
+        try:
+            reader = c2pa.Reader.from_file(tmp_file_path)
+            c2pa_json_str = reader.json()
+            if isinstance(c2pa_json_str, str):
+                c2pa_data = json.loads(c2pa_json_str)
+            else:
+                c2pa_data = c2pa_json_str
+                
+            # Filter C2PA to prevent context bloat
+            filtered_c2pa = {}
+            if c2pa_data and "active_manifest" in c2pa_data:
+                manifest_id = c2pa_data["active_manifest"]
+                manifests = c2pa_data.get("manifests", {})
+                active_manifest = manifests.get(manifest_id, {})
+                assertions = active_manifest.get("assertions", [])
+                filtered_c2pa["active_assertions"] = assertions
+                return filtered_c2pa
+                
+            return c2pa_data
+        finally:
+            os.remove(tmp_file_path)
+            
+    except Exception as e:
+        logger.error(f"C2PA extraction failed: {e}")
+        return None
+
+def generate_ela_score(image_bytes):
+    try:
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        tmp_buffer = io.BytesIO()
+        img.save(tmp_buffer, format="JPEG", quality=90)
+        tmp_buffer.seek(0)
+        compressed_img = Image.open(tmp_buffer)
+        
+        diff = ImageChops.difference(img, compressed_img)
+        diff_np = np.array(diff)
+        ela_score = float(np.mean(diff_np))
+        return ela_score
+    except Exception as e:
+        logger.error(f"ELA extraction failed: {e}")
+        return 0.0
 
 router = APIRouter()
 investigate_router = router
@@ -405,7 +495,7 @@ async def investigate_qr_endpoint(file: UploadFile = File(...)):
             client = Groq(api_key=os.getenv("GROQ_API_KEY"))
             b64_img = base64.b64encode(contents).decode('utf-8')
             vision_res = client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
+                model="qwen/qwen3.6-27b",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": "Extract the raw payload, URL, or payment string (e.g. upi://) from this QR code. Return ONLY the raw string. If unreadable, return FAILED."},
@@ -467,7 +557,7 @@ async def investigate_qr_endpoint(file: UploadFile = File(...)):
         
         chat_completion = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-20b",
             temperature=0.1,
             response_format={"type": "json_object"}
         )
@@ -508,6 +598,11 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
     await file.seek(0)
     contents = await file.read()
     
+    # 0. Pre-LLM Forensic Extraction Layer
+    exif_data = await run_in_threadpool(extract_exif_data, contents)
+    c2pa_data = await run_in_threadpool(extract_c2pa_data, contents)
+    ela_score = await run_in_threadpool(generate_ela_score, contents)
+    
     # 1. OCR & QR extraction (ZXing check & Tesseract OCR)
     ocr_text = ""
     qr_payloads = []
@@ -533,22 +628,63 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
     # 2. Two-Stage AI Vision & Threat Analysis via Groq
     try:
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        b64_img = base64.b64encode(contents).decode('utf-8')
+        
+        # Payload Optimization (PIL Image Pre-processing)
+        optimized_bytes = contents
+        try:
+            needs_optimization = False
+            if len(contents) > 2 * 1024 * 1024:
+                needs_optimization = True
+            else:
+                with Image.open(io.BytesIO(contents)) as pil_img:
+                    w, h = pil_img.size
+                    if max(w, h) > 1536:
+                        needs_optimization = True
+
+            if needs_optimization:
+                with Image.open(io.BytesIO(contents)) as pil_img:
+                    if pil_img.mode in ("RGBA", "P"):
+                        pil_img = pil_img.convert("RGB")
+                    
+                    w, h = pil_img.size
+                    if max(w, h) > 1536:
+                        ratio = 1536.0 / max(w, h)
+                        new_w = int(w * ratio)
+                        new_h = int(h * ratio)
+                        pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                    
+                    img_buffer = io.BytesIO()
+                    pil_img.save(img_buffer, format='JPEG', quality=85)
+                    optimized_bytes = img_buffer.getvalue()
+                    logger.info(f"Image optimized. Original size: {len(contents)} bytes. New size: {len(optimized_bytes)} bytes.")
+        except Exception as opt_err:
+            logger.error(f"Payload optimization failed: {opt_err}", exc_info=True)
+            # Proceed with original contents if optimization fails
+            pass
+
+        b64_img = base64.b64encode(optimized_bytes).decode('utf-8')
         
         # STAGE 1: Vision AI (Elite Visual Intelligence Analyst)
         vision_prompt = (
             "You are an elite visual intelligence analyst for TRINETRA.\n"
-            "Analyze this uploaded image and inspect it for three specific things:\n\n"
+            "Analyze this uploaded image and inspect it for four specific things:\n\n"
             "VISIBLE QR / BARCODES: Does this image contain a QR code or barcode?\n\n"
             "AI-GENERATION SIGNS: Does this image show signs of AI generation or synthetic manipulation (e.g., unnatural textures, warped background details, synthetic lighting, AI-rendered text artifacts, ultra-smooth skin, or unrealistic geometry)?\n\n"
             "VISUAL CONTEXT: Is it a screenshot of a conversation, an invoice/receipt, a social media post, a payment gateway, or general artwork?\n\n"
+            "STRICT ENTITY & ASSET RECOGNITION:\n"
+            "You are encouraged to identify specific entities (e.g., characters like Pikachu or Charizard, specific brand logos, or specific UI elements) to demonstrate deep visual comprehension.\n"
+            "Zero-Guessing Threshold: You must only name a specific entity if you have 100% visual confirmation based on clear, unobstructed features.\n"
+            "If an entity is partially obscured, blended, or ambiguous (e.g., a cluster of background characters), DO NOT guess its name. Instead, describe its visual attributes (e.g., \"a red bird-like character\" rather than guessing \"Ho-Oh\").\n"
+            "Focus your entity recognition on elements that help determine the media's origin (e.g., identifying official game assets vs. AI-hallucinated variations).\n\n"
+            f"FORENSIC METADATA: EXIF={exif_data}, C2PA={c2pa_data}, ELA_Score={ela_score}\n"
+            "You are provided with hidden cryptographic C2PA metadata, EXIF camera data, and an Error Level Analysis (ELA) score. If C2PA data indicates AI generation, or if the ELA score indicates high splicing, you MUST classify the media_origin as AI-GENERATED, even if the image visually appears to be a clean human-made poster or UI graphic.\n\n"
             "Return a clear structural summary of your findings."
         )
         
         extracted_context = "Visual context could not be determined."
         try:
             vision_res = client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
+                model="qwen/qwen3.6-27b",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": vision_prompt},
@@ -559,48 +695,59 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
             )
             extracted_context = vision_res.choices[0].message.content.strip()
         except Exception as vision_err:
-            print(f"Vision AI error: {vision_err}")
-            extracted_context = f"Vision analysis unavailable. Local OCR Text found: '{ocr_text}'"
+            logger.error(f"Vision API Critical Failure: {vision_err}", exc_info=True)
+            raise HTTPException(status_code=502, detail=f"Vision AI Extraction Error: {str(vision_err)}")
             
         if ocr_text:
             extracted_context += f"\n\n[LOCAL OCR TEXT EXTRACTED]: {ocr_text}"
 
         # STAGE 2: Cybersecurity Threat Analyst Reasoning
         threat_prompt = f"""
-You are an AI cybersecurity threat analyst for TRINETRA.
+You are TRINETRA, an elite digital forensics engine specializing in synthetic media analysis.
 Evaluate the provided evidence from an uploaded image artifact:
 
 DETECTED QR PAYLOAD: {extracted_payload or "None detected"}
 VISUAL CONTEXT & ANALYSIS: {extracted_context}
+FORENSIC METADATA: EXIF={exif_data}, C2PA={c2pa_data}, ELA_Score={ela_score}
 
-EVALUATION GUIDELINES:
+Execute this MANDATORY 3-STEP FORENSIC AUDIT on every image:
 
-QR CODE HANDLING: If a QR payload is present, evaluate the actual payload link (e.g., UPI link, URL). Do NOT mark a standard, normal UPI link as malicious simply because it appears inside an image.
+STEP 1: CORNER WATERMARK SCAN
+- Inspect the four corners (especially bottom-right and bottom-left).
+- If any generative AI badge, sparkle icon (e.g., 4-point star), or synthetic watermark is present -> Immediately classify media_origin as "AI-GENERATED" with synthetic_probability 95-100.
 
-AI-GENERATED CONTENT: Identify if the image appears to be AI-generated or synthetically altered.
+STEP 2: STRUCTURAL & GEOMETRIC AUDIT
+- Check symmetry and geometry: Are circular frames warped or broken? Are paired features (horns, ears, armor pauldrons) missing or mismatched?
+- Check object junctions: Do props (e.g., spatulas, weapons, food) melt directly into the character or armor with impossible physics?
+- Check crowd boundaries: In multi-character art, do limbs, tails, or hair fuse into neighboring bodies without clean occlusion lines?
+- If any of these diffusion errors are present -> Classify media_origin as "AI-GENERATED" (synthetic_probability 80-95), even if the image contains clean text, watermarks, or sharp outlines.
 
-CRITICAL: AI-generated images are NOT automatically malicious!
+STEP 3: DECEPTION & PAYLOAD AUDIT
+- Check for phishing links, QR payloads, urgent coercion, or financial fraud.
+- If safe/benign (e.g., fan art, gamer avatar, wallpaper) -> verdict: "SAFE", threat_score: 0-15.
+- If malicious/deceptive -> verdict: "SUSPICIOUS" or "MALICIOUS".
 
-If an image is AI-generated artwork, a meme, or a wallpaper, mark it as SAFE and note in ai_reasoning that it is AI-generated but poses no threat.
-
-Mark an AI image as SUSPICIOUS or MALICIOUS ONLY if it is being used deceptively (e.g., fake payment confirmation screenshots, fabricated identity documents, or deepfake phishing scams).
-
-PLAIN LANGUAGE: Explain your findings simply so any user can understand.
+OUTPUT REQUIREMENTS:
+- You must strictly output the JSON schema.
+- Explicitly cite the specific structural or corner anomalies in "synthetic_indicators" and "ai_reasoning".
 
 Respond ONLY with a valid JSON object matching this exact schema:
 {{
   "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
   "threat_score": 0,
   "confidence": 95,
+  "media_origin": "ORIGINAL" | "AI-GENERATED" | "UNCERTAIN",
+  "synthetic_probability": 0,
   "executive_summary": "A 2-sentence summary detailing what the image is and its safety status.",
   "ai_reasoning": "Simple explanation. If AI-generated, state clearly whether it is harmless AI art or deceptive synthetic media.",
   "indicators_of_compromise": ["Notable indicator 1", "Notable indicator 2"],
+  "synthetic_indicators": ["Notable structural or corner anomaly 1"],
   "recommended_actions": ["Simple action step 1", "Simple action step 2"]
 }}
 """
 
         chat_completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-20b",
             messages=[{"role": "user", "content": threat_prompt}],
             temperature=0.1,
             response_format={"type": "json_object"}
@@ -616,9 +763,12 @@ Respond ONLY with a valid JSON object matching this exact schema:
                 "verdict": ai_parsed_data.get("verdict", "UNKNOWN"),
                 "threat_score": ai_parsed_data.get("threat_score", 0),
                 "confidence": ai_parsed_data.get("confidence", 95),
+                "media_origin": ai_parsed_data.get("media_origin", "UNCERTAIN"),
+                "synthetic_probability": ai_parsed_data.get("synthetic_probability", 0),
                 "executive_summary": ai_parsed_data.get("executive_summary", "Image analysis completed."),
                 "ai_reasoning": ai_parsed_data.get("ai_reasoning", "No detailed reasoning provided."),
                 "indicators_of_compromise": ai_parsed_data.get("indicators_of_compromise", []),
+                "synthetic_indicators": ai_parsed_data.get("synthetic_indicators", []),
                 "recommended_actions": ai_parsed_data.get("recommended_actions", []),
                 "evidence_collected": {
                     "OCR_Text_Found": bool(ocr_text),

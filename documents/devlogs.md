@@ -28,7 +28,7 @@
 **Objective:** Handle large volumes of embedded images without exhausting AI Engine context windows or hitting rate limits.
 **Actions:**
 - **Problem:** Forwarding every extracted image to the Groq Vision API (Qwen 3.6 27B) for analysis resulted in high latency and rapid API rate limiting.
-- **Resolution:** Implemented local Optical Character Recognition (OCR) using `pytesseract`. By extracting text locally, the backend filters out image noise and only sends the raw, extracted text to the LLM (Llama-3.3-70b-versatile). This architectural pivot significantly reduced payload sizes and optimized LLM context windows.
+- **Resolution:** Implemented local Optical Character Recognition (OCR) using `pytesseract`. By extracting text locally, the backend filters out image noise and only sends the raw, extracted text to the LLM (Llama-3.1-70b-versatile). This architectural pivot significantly reduced payload sizes and optimized LLM context windows.
 
 ## [Phase 5] UI/UX Standardization
 **Objective:** Create a uniform, frictionless user experience for digital artifact submission.
@@ -42,7 +42,7 @@
 **Objective:** Resolve QR decoding failures caused by stylized payment logos (e.g., GPay/UPI overlays) and produce empathetic, non-technical threat evaluations.
 **Actions:**
 - **Hybrid Extraction Architecture:** Upgraded from legacy Zbar bindings to a multi-stage decoding pipeline in `investigate_qr_endpoint`. Stage 1 leverages `OpenCV` and `zxing-cpp` for local determinism (with standard and dark-mode matrix inversion). Stage 2 introduces an intelligent fallback via Groq Vision AI (`llama-3.2-11b-vision-preview`) when artistic elements or logos obscure the barcode matrix.
-- **End-User Focused Threat Reasoning:** Engineered domain-aware prompt directives for `Llama-3.3-70b-versatile` to speak directly to everyday users in accessible language. Standardized recognition of benign UPI payment links (`upi://pay`) and typical tracking parameters to eliminate false alarm fatigue during everyday transactions.
+- **End-User Focused Threat Reasoning:** Engineered domain-aware prompt directives for `Llama-3.1-70b-versatile` to speak directly to everyday users in accessible language. Standardized recognition of benign UPI payment links (`upi://pay`) and typical tracking parameters to eliminate false alarm fatigue during everyday transactions.
 - **Bulletproof Data Mapping & Schema Consistency:** Standardized dictionary mapping in the backend to guarantee fallbacks for critical UI reporting keys (`executive_summary`, `ai_reasoning`, and nested `evidence_collected`).
 
 ## [Phase 7] Tactical OS Interface Overhaul, Pipeline Orchestrator & QR Error Handling Protocol

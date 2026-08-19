@@ -14,7 +14,7 @@ TRINETRA follows a modern, decoupled edge-to-intelligence architecture:
 - **Presentation Layer (Tactical Client):** A React 18 web application utilizing Tailwind CSS and Framer Motion. It features an asynchronous state-machine UI, an interactive Cybernetic Third Eye HUD, a 7-stage investigation progression orchestrator, and interactive report visualization.
 - **Application Layer (Memory-Mapped Server):** A FastAPI Python backend responsible for non-blocking API routing, in-memory binary validation, and coordinating specialized extraction engines without writing potentially malicious files to disk.
 - **Extraction Layer (Local Core):** Dedicated Python engines utilizing `PyMuPDF` (`fitz`), `pytesseract`, `zxing-cpp`, `OpenCV`, native `email` libraries, and brand typosquatting heuristics to strip binary noise and extract pure Indicators of Compromise (IoCs).
-- **Intelligence Layer (Groq LPU™ API):** Ultra-low-latency inference routing structured text and JSON IOCs to Llama-3.3-70b-versatile, and image/QR streams to Llama-3.2-11b-vision-preview and Qwen 3.6 27B for contextual threat reasoning and standardized verdict generation.
+- **Intelligence Layer (Groq LPU™ API):** Ultra-low-latency inference routing structured text and JSON IOCs to Llama-3.1-70b-versatile, and image/QR streams to Llama-3.2-11b-vision-preview and Qwen 3.6 27B for contextual threat reasoning and standardized verdict generation.
 
 ### 3. Functional Requirements
 
