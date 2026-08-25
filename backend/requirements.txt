@@ -8,3 +8,7 @@ pydantic
 opencv-python
 numpy
 zxing-cpp
+torch
+transformers
+pillow
+c2pa-python

@@ -24,7 +24,7 @@ The system must support the following core forensic workspaces and analytical mo
 2. **Email Forensics:** Parse `.eml` and raw email structures in memory to analyze routing headers, sender authentication (SPF/DKIM/DMARC alignment), urgency-based social engineering, embedded tracking URLs, and attachment payloads.
 3. **PDF Document Inspector:** Extract text, annotations, and embedded URIs from PDF document streams without launching active execution wrappers or scripts.
 4. **QR Code (Quishing) Decoder:** Employ a hybrid decoding architecture combining Stage-1 local OpenCV/ZXing-CPP matrix reading (with bitwise-NOT dark-mode inversion) and Stage-2 Groq Vision AI fallback to decode stylized or logo-overlaid matrices (e.g., GPay/UPI overlays). Provide empathetic, non-technical threat evaluations while recognizing benign payment links (`upi://pay`).
-5. **Vision & Image Engine:** Perform local OCR via `pytesseract` to extract embedded textual indicators and leverage vision LLMs to detect AI-generated synthetic media, deepfake markers, and deceptive interface screenshots.
+5. **Vision & Image Engine:** Perform local OCR via `pytesseract` to extract embedded textual indicators, execute mathematical forensics like 2D FFT (Fast Fourier Transform) spectrum analysis, and leverage vision LLMs to detect AI-generated synthetic media, deepfake markers, and deceptive interface screenshots.
 6. **Interactive Technical Documentation Hub:** Integrate an expandable inspection drawer within the tactical dossier (SYSTEM.ABOUT) allowing analysts to inspect the technical stack, threat metrics evaluated, and AI prompt strategies for each forensic vector.
 
 #### 3.2 UI/UX Requirements & Investigation Lifecycle

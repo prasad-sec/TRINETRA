@@ -118,12 +118,14 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
       initInvestigation();
 
       try {
-        const payload = activeTab === 'URL' ? { url: currentInputUrl } : { url: 'dropped_artifact' };
+        const bodyPayload = activeTab === 'URL' 
+          ? JSON.stringify({ url: inputUrl }) 
+          : JSON.stringify({ url: 'dropped_artifact' });
         
         const res = await fetch('http://localhost:8000/api/investigate/url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: bodyPayload
         });
         
         if (!res.ok) throw new Error('API Error');

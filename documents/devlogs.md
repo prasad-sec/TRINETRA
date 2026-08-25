@@ -54,3 +54,12 @@
 - **QR Module Bug Fix & Error Handling (Early Return Protocol):** Resolved a frontend UI freeze and backend HTTP 400 exception when analyzing non-QR images. Implemented the Early Return Protocol in `investigate_qr_endpoint` to catch decode failures and return a standardized JSON payload (`verdict: "SAFE"`, `threat_score: 0`) explaining that no valid QR matrix was detected, guaranteeing zero UI lockups or thread hangs.
 - **Documentation Suite & Deep-Dive Architecture Alignment:** Updated core platform documentation (`README.md`, `srs.md`, and `devlogs.md`) under primary developer Prasad Prashant Dabhekar, integrating explicit cross-references to [ARCHITECTURE.md](./ARCHITECTURE.md) for exhaustive technical specifications, high-level system architecture, data flow diagrams, and security models.
 - **Performance & Hardware Benchmark Note:** Local parser testing, deterministic extraction loops, and in-memory validation successfully handled and verified on local workstation hardware configuration (**AMD Ryzen 7 7445HS / NVIDIA RTX 3050 6GB / 16GB RAM**) before routing structured IOC payloads to Groq LPUs.
+
+## [Phase 8] Cryptographic Metadata & Synthetic Image Forensics Optimization
+**Objective:** Harden the platform against AI-generated deepfakes and manipulated synthetic media while upgrading the core reasoning engine.
+**Actions:**
+- **Cryptographic Provenance:** Integrated `c2pa-python` to extract cryptographic Content Credentials (C2PA manifests) from image payloads to deterministically flag AI generation.
+- **Error Level Analysis (ELA):** Implemented ELA computation using `Pillow` to detect synthetic composite blending, image splicing, and post-processing manipulation.
+- **EXIF Extraction & Filtering:** Extracted and filtered EXIF camera metadata to provide origin context without blowing out LLM context windows.
+- **4-Step Forensic Audit Integration:** Upgraded the Vision AI threat prompts in `/api/investigate/image` with a mandatory 4-Step Forensic Audit (Corner Watermark Scan, Geometric Audit, Deception Audit, Hybrid Asset Rule) to mandate strict structural anomaly reporting.
+- **Engine Upgrade:** Migrated the primary threat reasoning engine from Llama 3.1 to `Llama-3.3-70b-versatile` across the backend endpoints to leverage improved instruction following and complex heuristic evaluation.

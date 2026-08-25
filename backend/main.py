@@ -1,11 +1,20 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.investigate import investigate_router
 
-app = FastAPI(title="TRINETRA API", version="1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Setup for lifespan events
+    yield
+    # Cleanup for lifespan events
+    pass
+
+app = FastAPI(title="TRINETRA API", version="1.0", lifespan=lifespan)
 
 app.include_router(investigate_router, prefix="/api/investigate", tags=["investigate"])
 

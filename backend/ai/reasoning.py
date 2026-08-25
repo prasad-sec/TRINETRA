@@ -4,6 +4,7 @@ import groq
 from groq import AsyncGroq
 
 from pydantic import BaseModel
+from utils import parse_llm_json
 from typing import List, Dict, Any
 
 class InvestigationReport(BaseModel):
@@ -22,7 +23,7 @@ class InvestigationReport(BaseModel):
 class AIEngine:
     def __init__(self):
         self.client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = "llama-3.3-70b-versatile"
+        self.model = "openai/gpt-oss-120b"
         
     async def analyze_artifact(self, artifact_type: str, extracted_data: dict) -> dict:
         system_prompt = (
@@ -45,7 +46,8 @@ class AIEngine:
             "- If your reasoning identifies 'typosquatting', 'phishing', or 'malicious intent', the `threat_score` MUST be between 85-100 and the `threat_verdict` MUST be 'CRITICAL'.\n"
             "- If you identify suspicious keywords but no direct malice, the score MUST be 50-84 and verdict 'SUSPICIOUS'.\n"
             "- ONLY output 'SAFE' (0-49) if the domain is verified and clean. NEVER output a low score if your reasoning states the site is dangerous.\n"
-            "You MUST output your response in valid JSON matching this exact schema: { 'threat_verdict': 'string', 'threat_score': 0, 'ai_confidence': 95, 'confidence_explanation': 'string', 'executive_summary': 'string', 'key_findings': ['finding 1'], 'evidence_collected': {'key': 'value'}, 'indicators_of_compromise': {'type': ['ioc1']}, 'ai_analyst_reasoning': 'string', 'recommended_actions': ['action 1'], 'investigation_conclusion': 'string' }."
+            "You MUST output your response in valid JSON matching this exact schema: { 'threat_verdict': 'string', 'threat_score': 0, 'ai_confidence': 95, 'confidence_explanation': 'string', 'executive_summary': 'string', 'key_findings': ['finding 1'], 'evidence_collected': {'key': 'value'}, 'indicators_of_compromise': {'type': ['ioc1']}, 'ai_analyst_reasoning': 'string', 'recommended_actions': ['action 1'], 'investigation_conclusion': 'string' }.\n"
+            "Do not wrap your response in markdown code blocks. Output raw JSON starting with { and ending with }."
         )
         
         try:
@@ -60,17 +62,36 @@ class AIEngine:
                         "content": json.dumps(extracted_data),
                     }
                 ],
-                model=self.model,
-                response_format={"type": "json_object"}
+                model=self.model
             )
             
-            response_content = chat_completion.choices[0].message.content
-            # Validate output via Pydantic
-            parsed_data = json.loads(response_content)
+            # 1. Extract the raw string from the Groq API response
+            raw_content = chat_completion.choices[0].message.content
+            
+            # 2. Define the fallback schema to prevent UI freezing
+            fallback_schema = {
+                "executive_summary": "Analysis completed, but the AI engine returned non-standard formatting.",
+                "threat_verdict": "SAFE",
+                "threat_score": 0,
+                "ai_confidence": 50,
+                "ai_analyst_reasoning": "The AI engine analyzed the payload but returned unparseable text. Relying on baseline heuristics.",
+                "evidence_collected": {"raw_response": "Formatting failure"},
+                "indicators_of_compromise": {},
+                "key_findings": ["Analysis could not be completed."],
+                "recommended_actions": ["Check system logs or retry"],
+                "investigation_conclusion": "Investigation could not be completed.",
+                "confidence_explanation": "Fallback triggered due to analysis error.",
+                "verdict": "SAFE",
+                "confidence": 50,
+                "ai_reasoning": "The AI engine analyzed the payload but returned unparseable text. Relying on baseline heuristics."
+            }
+            
+            # 3. Parse using the global utility
+            parsed_data = parse_llm_json(raw_content, fallback_schema)
             validated_report = InvestigationReport(**parsed_data)
             return validated_report.dict()
             
-        except (json.JSONDecodeError, groq.APIError, Exception) as e:
+        except (groq.APIError, Exception) as e:
             fallback = InvestigationReport(
                 threat_verdict="SAFE",
                 threat_score=0,
