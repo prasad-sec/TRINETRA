@@ -809,21 +809,24 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
         b64_img = base64.b64encode(optimized_bytes).decode('utf-8')
         
         # STAGE 1: Vision AI (Elite Visual Intelligence Analyst)
-        vision_prompt = (
-            "You are an elite visual intelligence analyst for TRINETRA.\n"
-            "Analyze this uploaded image and inspect it for four specific things:\n\n"
-            "VISIBLE QR / BARCODES: Does this image contain a QR code or barcode?\n\n"
-            "AI-GENERATION SIGNS: Does this image show signs of AI generation or synthetic manipulation (e.g., unnatural textures, warped background details, synthetic lighting, AI-rendered text artifacts, ultra-smooth skin, or unrealistic geometry)?\n\n"
-            "VISUAL CONTEXT: Is it a screenshot of a conversation, an invoice/receipt, a social media post, a payment gateway, or general artwork?\n\n"
-            "STRICT ENTITY & ASSET RECOGNITION:\n"
-            "You are encouraged to identify specific entities (e.g., characters like Pikachu or Charizard, specific brand logos, or specific UI elements) to demonstrate deep visual comprehension.\n"
-            "Zero-Guessing Threshold: You must only name a specific entity if you have 100% visual confirmation based on clear, unobstructed features.\n"
-            "If an entity is partially obscured, blended, or ambiguous (e.g., a cluster of background characters), DO NOT guess its name. Instead, describe its visual attributes (e.g., \"a red bird-like character\" rather than guessing \"Ho-Oh\").\n"
-            "Focus your entity recognition on elements that help determine the media's origin (e.g., identifying official game assets vs. AI-hallucinated variations).\n\n"
-            f"FORENSIC METADATA: EXIF={exif_data}, C2PA={c2pa_data}, ELA_Score={ela_score}\n"
-            "You are provided with hidden cryptographic C2PA metadata, EXIF camera data, and an Error Level Analysis (ELA) score. If C2PA data indicates AI generation, or if the ELA score indicates high splicing, you MUST classify the media_origin as AI-GENERATED, even if the image visually appears to be a clean human-made poster or UI graphic.\n\n"
-            "Return a clear structural summary of your findings."
-        )
+        vision_prompt = f"""
+You are TRINETRA's Forensic Vision Engine. Perform a rigorous, multi-stage visual inspection of the provided image:
+
+[STAGE 1: CONTEXT & ANCHOR AUDIT]
+- Inspect UI elements, text banners, card frames, health bars, and background environments.
+- For gaming/media assets, distinguish related sister franchises by checking structural markers:
+  * Clash Royale vs. Clash of Clans: Look for card frames, elixir bars, crown towers, and arena bridges (Royale) versus village grids, collectors, town halls, and walls (Clash of Clans).
+
+[STAGE 2: FORENSIC & METADATA SENSOR FUSION]
+- ELA Variance Status: {ela_score}
+- 2D FFT Spectrum Status: {fft_result}
+- Extracted Local OCR Text: {ocr_text}
+
+[STAGE 3: VERDICT & REASONING]
+Provide the final evaluation in the required JSON format, ensuring:
+- `executive_summary`: Accurately name the specific character/entity and its precise franchise/context.
+- `ai_reasoning`: Explain the distinct visual anchors (UI, environment, textures) used to reach your conclusion.
+"""
         
         extracted_context = "Visual context could not be determined."
         try:
@@ -841,9 +844,6 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
         except Exception as vision_err:
             logger.error(f"Vision API Critical Failure: {vision_err}", exc_info=True)
             raise HTTPException(status_code=502, detail=f"Vision AI Extraction Error: {str(vision_err)}")
-            
-        if ocr_text:
-            extracted_context += f"\n\n[LOCAL OCR TEXT EXTRACTED]: {ocr_text}"
 
         # STAGE 2: Cybersecurity Threat Analyst Reasoning
         threat_prompt = f"""
