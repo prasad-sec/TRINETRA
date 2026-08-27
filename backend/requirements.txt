@@ -12,3 +12,4 @@ torch
 transformers
 pillow
 c2pa-python
+slowapi

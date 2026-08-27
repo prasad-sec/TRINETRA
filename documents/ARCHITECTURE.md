@@ -7,7 +7,7 @@
 
 ## 1. High-Level System Architecture & Executive Summary
 
-TRINETRA is engineered as an **AI Digital Forensics Operating System**—a unified, high-performance command platform designed to empower security analysts and incident responders with advanced, deterministic threat triage. Unlike traditional monolithic scanners that transmit unprocessed payload files across internet networks to remote APIs, TRINETRA enforces a strict, decoupled edge-to-intelligence pipeline.
+TRINETRA is engineered as an **AI Digital Forensics Platform**—a unified, high-performance command tool designed to empower security analysts and incident responders with advanced, deterministic threat triage. Unlike traditional monolithic scanners that transmit unprocessed payload files across internet networks to remote APIs, TRINETRA enforces a strict, decoupled edge-to-intelligence pipeline.
 
 ```
        [ PRESENTATION LAYER ]            [ APPLICATION & EDGE LAYER ]          [ INTELLIGENCE LAYER ]
@@ -63,6 +63,7 @@ The presentation layer of TRINETRA rejects generic, commercial web design conven
 - **Framer Motion & Animation Kinetics:** Hardware-accelerated animations are integrated not as aesthetic embellishment, but as cognitive state feedback. Key kinetic installations include:
   - **The Cybernetic Third Eye HUD:** A custom-engineered scalable vector graphics (SVG) assembly featuring counter-rotating concentric astrolabe rings and an animated Mecha-Iris aperture that scales open during initial diagnostic synchronization.
   - **Interactive Technical Documentation Hub:** Within the system dossier (`SYSTEM.ABOUT`), an unmounting bento grid transitions seamlessly into an expanding dark-glass inspection drawer via layout-id morphing and `AnimatePresence` state retention.
+  - **Holographic Dossier Reveal:** The Digital Investigation Report view cascades into visibility using custom CSS keyframes (`dossierReveal`) with staggered 3D transform delays (`perspective`, `rotateX`), creating a holographic entrance effect.
   - **Visual Telemetry:** Pulsing neon status radar emitters (`animate-ping`) and staggered kinetic entrances provide immediate visual affirmation of engine execution states.
 
 ---
@@ -81,16 +82,16 @@ The application layer is powered by a **FastAPI** service engineered for non-blo
    - **Feature Extraction:** Deconstructs complete Uniform Resource Identifiers to evaluate top-level domain (TLD) risk scores, domain creation age heuristics, IP-literal routing, suspicious parameter permutations, open-redirect chains, and Levenshtein distance typosquatting against high-value financial brand indexes.
 2. **Email Forensics (`/api/investigate/email`):**
    - **Engine:** Native Python `email` (RFC 2822) and MIME structure traversal parsers paired with attachment extraction pipelines.
-   - **Feature Extraction:** Dissects routing header chains to verify authentication alignment (SPF, DKIM, DMARC), extracts IP relay paths, and detects Return-Path vs. From header spoofing. Simultaneously decodes MIME multipart bodies to scan for linguistic urgency markers, embedded tracking URLs, and concealed quishing payloads in image attachments.
+   - **Feature Extraction:** Dissects routing header chains to verify authentication alignment (SPF, DKIM, DMARC), extracts IP relay paths, and detects Return-Path vs. From header spoofing. Simultaneously decodes MIME multipart bodies to scan for linguistic urgency markers and implements a Deployment-Safe Recursive Artifact Bridge that extracts up to 5 embedded image attachments, downsamples them for memory safety, and routes them through mathematical vision sensors (FFT/ELA) to detect concealed AI payloads.
 3. **PDF Document Inspector (`/api/investigate/pdf`):**
    - **Engine:** `PyMuPDF` (`fitz`) stream extractor paired with local pattern-matching regex engines.
-   - **Feature Extraction:** Reads PDF binary structures directly in RAM without launching external reader execution wrappers or executing embedded JavaScript engines. Extracts embedded annotations, universal resource identifiers (URIs), hidden Javascript/OpenAction triggers, and linguistic invoice fraud text patterns (capped at optimal context thresholds).
+   - **Feature Extraction:** Reads PDF binary structures directly in RAM without launching external reader execution wrappers or executing embedded JavaScript engines. Extracts embedded annotations and URIs, and utilizes the Recursive Artifact Bridge to parse and recursively analyze embedded images for hidden quishing or deepfake threats without exceeding cloud server RAM constraints.
 4. **QR Code Quishing Decoder (`/api/investigate/qr`):**
    - **Engine:** Multi-stage computer vision pipeline leveraging `OpenCV` (`cv2`) and high-performance C++ bindings via `zxing-cpp`.
    - **Feature Extraction:** Stage 1 applies local image resizing, thresholding, and **bitwise-NOT matrix inversion** to reliably recover dark-mode or low-contrast barcodes. Extracts Virtual Payment Address (VPA) syntax, UPI payment parameter anomalies (`pa`, `pn`, `am`), embedded redirect shorteners, and obfuscated phishing URIs. Stage 2 triggers an intelligent vision fallback for artistic or logo-overlaid payment matrices.
 5. **Vision & Synthetic Image Engine (`/api/investigate/image`):**
-   - **Engine:** Local Optical Character Recognition (OCR) via `pytesseract`, cryptographic metadata parsing (`c2pa-python`), EXIF extraction (`Pillow`), Error Level Analysis (ELA) generation, and 2D Fast Fourier Transform (FFT) spectrum analysis (`numpy`).
-   - **Feature Extraction:** Pre-processes image streams locally to extract dense textual indicators (e.g., within screenshot conversations or fraudulent transaction proofs). Extracts C2PA active manifests, filters EXIF camera metadata, computes ELA scores, and evaluates 2D FFT high-frequency ratios to detect diffusion upsampling residual artifacts (synthetic media). Filters raw image noise locally before routing visual context and extracted text to vision models for synthetic generative artifact analysis and threat classification via a mandatory 4-Step Forensic Audit.
+   - **Engine:** Local Optical Character Recognition (OCR) via `pytesseract`, live OSINT via `duckduckgo-search`, cryptographic metadata parsing (`c2pa-python`), EXIF extraction (`Pillow`), Error Level Analysis (ELA) generation, and 2D Fast Fourier Transform (FFT) spectrum analysis (`numpy`).
+   - **Feature Extraction:** Pre-processes image streams locally to extract dense textual indicators (e.g., within screenshot conversations or fraudulent transaction proofs). Feeds OCR output into a Keyless DuckDuckGo OSINT Pipeline (duckduckgo-search) to fetch live web context without hitting external API rate limits or requiring paid API keys, ensuring highly scalable deployment. Extracts C2PA active manifests, filters EXIF camera metadata, computes ELA scores, and evaluates 2D FFT high-frequency ratios to detect diffusion upsampling residual artifacts (synthetic media). Filters raw image noise locally before routing visual OSINT context and extracted text to vision models for synthetic generative artifact analysis and threat classification via a mandatory 4-Step Forensic Audit.
 
 ---
 
@@ -176,6 +177,11 @@ TRINETRA supersedes this via proactive edge logic:
    }
    ```
 3. **Frontend UI Recovery Guarantee:** On the presentation layer (`QrWorkspace.jsx` and related inspection consoles), execution blocks (`try / catch / finally`) ensure that loading state triggers (`isLoading`, `setIsInvestigating`) are systematically reset to `false` regardless of network transmission interruptions or anomalies. This guarantees that the analyst interface never hangs, allowing immediate submission of subsequent artifacts without requiring manual application reloads.
+
+### 7.5 API Rate Limiting & Payload Size Restrictions
+To protect the backend from volumetric DDoS attacks and exhaustion of cloud AI inference quotas, TRINETRA enforces strict edge rate limiting:
+- **SlowAPI Rate Limiting:** All 5 investigation endpoints are strictly throttled to 6 requests per minute per IP address. When exceeded, the system gracefully returns a standard `429 Too Many Requests` response.
+- **Payload Size Restrictions:** A lightweight Starlette HTTP middleware intercepts incoming requests and measures `content-length` prior to loading streams into memory, enforcing a hard 10MB file limit to prevent Out-Of-Memory (OOM) faults during heavy PDF or Image ingestions.
 
 ---
 

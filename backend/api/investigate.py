@@ -8,6 +8,7 @@ import re
 import json
 import base64
 import os
+import requests
 import pymupdf
 import fitz  # PyMuPDF
 import cv2
@@ -19,14 +20,19 @@ import tempfile
 import c2pa
 from PIL import Image, ExifTags, ImageChops, ImageEnhance
 import urllib.parse
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Request
 from fastapi.concurrency import run_in_threadpool
 from groq import Groq
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 from pydantic import BaseModel
 from engines.url_engine import URLEngine
 from ai.reasoning import AIEngine
 from schemas.investigation import InvestigationResult
 from utils import parse_llm_json
+from duckduckgo_search import DDGS
 
 def extract_qr_from_image_bytes(image_bytes):
     try:
@@ -109,9 +115,10 @@ def extract_c2pa_data(image_bytes, suffix=".jpg"):
         logger.error(f"C2PA extraction failed: {e}")
         return None
 
-def generate_ela_score(image_bytes):
+def compute_ela_score(image_bytes):
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        img.thumbnail((800, 800), Image.Resampling.LANCZOS)
         tmp_buffer = io.BytesIO()
         img.save(tmp_buffer, format="JPEG", quality=90)
         tmp_buffer.seek(0)
@@ -135,7 +142,8 @@ class URLPayload(BaseModel):
     url: str
 
 @router.post("/url", response_model=InvestigationResult)
-async def investigate_url(payload: URLPayload):
+@limiter.limit("6/minute")
+async def investigate_url(request: Request, payload: URLPayload):
     target_url = urllib.parse.unquote(payload.url)
     try:
         # Step 1: Extract IOCs deterministically
@@ -170,7 +178,9 @@ async def investigate_url(payload: URLPayload):
         )
 
 @router.post("/email")
+@limiter.limit("6/minute")
 async def analyze_email(
+    request: Request,
     type: str = Form(...), 
     file: UploadFile = File(None), 
     content: str = Form(None)
@@ -183,6 +193,7 @@ async def analyze_email(
         attached_pdf_urls = []
         attached_image_text = []
         attached_image_urls = []
+        email_child_reports = []
         
         if type == 'upload':
             if not file:
@@ -202,7 +213,12 @@ async def analyze_email(
             
             plain_text = ""
             html_text = ""
+            max_attachments = 5
+            attachments_scanned = 0
+            
             for part in msg.walk():
+                if attachments_scanned >= max_attachments:
+                    break
                 content_type = part.get_content_type()
                 if content_type == 'text/plain':
                     payload = part.get_content()
@@ -238,8 +254,15 @@ async def analyze_email(
                     try:
                         img_bytes = part.get_payload(decode=True)
                         
+                        qr_data = extract_qr_from_image_bytes(img_bytes)
+                        fft_data = compute_fft_anomaly(img_bytes)
+                        ela_data = compute_ela_score(img_bytes)
+
+                        email_child_reports.append(f"[Attached Image {attachments_scanned+1}]: QR Context: {qr_data} | FFT: {fft_data} | ELA: {ela_data}")
+                        attachments_scanned += 1
+
                         # 1. New QR Payload Extraction for Quishing (appending to body)
-                        qr_payloads = extract_qr_from_image_bytes(img_bytes)
+                        qr_payloads = qr_data
                         if qr_payloads:
                             qr_alert = f"\n[HIDDEN QR CODE DETECTED IN EMAIL ATTACHMENT]: {' '.join(qr_payloads)}"
                             plain_text += qr_alert
@@ -291,9 +314,14 @@ async def analyze_email(
             "attached_image_urls": attached_image_urls
         }
     
-        EMAIL_SYSTEM_PROMPT = """
+        EMAIL_SYSTEM_PROMPT = f"""
 You are TRINETRA, an advanced, highly analytical AI Threat Intelligence Engine.
 Your objective is to analyze email data and determine if it is a phishing attempt, scam, or safe communication.
+
+[EMBEDDED ARTIFACT ANALYSIS]
+{chr(10).join(email_child_reports)}
+
+CRITICAL RULE: Review the [EMBEDDED ARTIFACT ANALYSIS]. If any extracted child image triggers a SYNTHETIC/AI-GENERATED flag, or if a decoded QR code reveals a suspicious URI, you MUST factor this into the parent document's threat score and flag the hidden payload in the executive summary.
 
 You will receive a JSON payload containing:
 1. `headers_available`: Boolean indicating if technical headers are present.
@@ -421,7 +449,8 @@ EXPECTED JSON SCHEMA:
         }
 
 @router.post("/pdf")
-async def investigate_pdf(file: UploadFile = File(...)):
+@limiter.limit("6/minute")
+async def investigate_pdf(request: Request, file: UploadFile = File(...)):
     try:
         if not (file.filename.endswith('.pdf') or file.content_type == 'application/pdf'):
             raise HTTPException(status_code=400, detail="Invalid file type. Must be a PDF.")
@@ -429,6 +458,7 @@ async def investigate_pdf(file: UploadFile = File(...)):
         file_bytes = await file.read()
         pdf_text = ""
         pdf_urls = []
+        pdf_child_reports = []
         
         try:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -444,15 +474,27 @@ async def investigate_pdf(file: UploadFile = File(...)):
                     pdf_urls.append(uri)
     
         # Safely extract embedded images & QR codes
-        for page_index in range(len(doc)):
+        max_images_to_scan = 5
+        images_scanned = 0
+
+        for page_index in range(min(len(doc), 5)):
             page = doc[page_index]
             for img in page.get_images(full=True):
+                if images_scanned >= max_images_to_scan:
+                    break
                 try:
                     base_image = doc.extract_image(img[0])
                     image_bytes = base_image["image"]
-                    qr_payloads = extract_qr_from_image_bytes(image_bytes)
-                    if qr_payloads:
-                        extracted_text += f"\n[HIDDEN QR CODE payload]: {' '.join(qr_payloads)}"
+                    
+                    qr_data = extract_qr_from_image_bytes(image_bytes)
+                    fft_data = compute_fft_anomaly(image_bytes)
+                    ela_data = compute_ela_score(image_bytes)
+
+                    pdf_child_reports.append(f"[Embedded Image {images_scanned+1}]: QR Context: {qr_data} | FFT: {fft_data} | ELA: {ela_data}")
+                    images_scanned += 1
+                    
+                    if qr_data:
+                        extracted_text += f"\n[HIDDEN QR CODE payload]: {' '.join(qr_data)}"
                 except Exception:
                     continue
     
@@ -463,9 +505,14 @@ async def investigate_pdf(file: UploadFile = File(...)):
             "pdf_urls": list(set(pdf_urls))
         }
         
-        PDF_SYSTEM_PROMPT = """
+        PDF_SYSTEM_PROMPT = f"""
 You are TRINETRA, an advanced AI Threat Intelligence Engine.
 Your objective is to analyze extracted PDF text and URLs to determine if the document is malicious, a scam, or safe.
+
+[EMBEDDED ARTIFACT ANALYSIS]
+{chr(10).join(pdf_child_reports)}
+
+CRITICAL RULE: Review the [EMBEDDED ARTIFACT ANALYSIS]. If any extracted child image triggers a SYNTHETIC/AI-GENERATED flag, or if a decoded QR code reveals a suspicious URI, you MUST factor this into the parent document's threat score and flag the hidden payload in the executive summary.
 
 You will receive a JSON payload containing:
 1. `pdf_text`: Extracted raw text from the PDF.
@@ -559,7 +606,8 @@ You MUST respond with ONLY a valid JSON object matching this schema:
         }
 
 @router.post("/qr")
-async def investigate_qr_endpoint(file: UploadFile = File(...)):
+@limiter.limit("6/minute")
+async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)):
     # 1. Reset the file buffer and read bytes
     await file.seek(0)
     contents = await file.read()
@@ -706,6 +754,7 @@ def compute_fft_anomaly(image_bytes: bytes) -> str:
     """
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert('L')
+        img.thumbnail((800, 800), Image.Resampling.LANCZOS)
         img_array = np.array(img)
 
         # 2D Fast Fourier Transform
@@ -736,8 +785,33 @@ def compute_fft_anomaly(image_bytes: bytes) -> str:
     except Exception as e:
         return f"FFT Analysis Skipped: {str(e)}"
 
+def free_osint_lookup(ocr_text: str) -> str:
+    """
+    Uses DuckDuckGo to search the web for context based on extracted image text.
+    Requires no API keys and has no hard rate limits.
+    """
+    if not ocr_text or len(ocr_text.strip()) < 3:
+        return "No sufficient text extracted for OSINT web search."
+        
+    try:
+        # Search the web using the text found in the image
+        results = DDGS().text(ocr_text, max_results=3)
+        
+        if not results:
+            return "No relevant web context found."
+            
+        # Format the top search results into a summary
+        context = "Top Web Findings:\n"
+        for res in results:
+            context += f"- {res.get('title')}: {res.get('body')}\n"
+            
+        return context
+    except Exception as e:
+        return f"OSINT Search Failed: {str(e)}"
+
 @router.post("/image")
-async def investigate_image_endpoint(file: UploadFile = File(...)):
+@limiter.limit("6/minute")
+async def investigate_image_endpoint(request: Request, file: UploadFile = File(...)):
     await file.seek(0)
     file_bytes = await file.read()
     fft_result = compute_fft_anomaly(file_bytes)
@@ -745,7 +819,8 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
     # 0. Pre-LLM Forensic Extraction Layer
     exif_data = await run_in_threadpool(extract_exif_data, file_bytes)
     c2pa_data = await run_in_threadpool(extract_c2pa_data, file_bytes)
-    ela_score = await run_in_threadpool(generate_ela_score, file_bytes)
+    ela_score = await run_in_threadpool(compute_ela_score, file_bytes)
+    ela_result = ela_score  # Alias for prompt variables
     
     # 1. OCR & QR extraction (ZXing check & Tesseract OCR)
     ocr_text = ""
@@ -768,6 +843,9 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
                         qr_payloads = [extracted_payload]
     except Exception as e:
         print(f"Image CV parsing failed: {e}")
+
+    # Execute Web OSINT using OCR text
+    osint_result = free_osint_lookup(ocr_text)
 
     # 2. Two-Stage AI Vision & Threat Analysis via Groq
     try:
@@ -809,24 +887,30 @@ async def investigate_image_endpoint(file: UploadFile = File(...)):
         b64_img = base64.b64encode(optimized_bytes).decode('utf-8')
         
         # STAGE 1: Vision AI (Elite Visual Intelligence Analyst)
-        vision_prompt = f"""
-You are TRINETRA's Forensic Vision Engine. Perform a rigorous, multi-stage visual inspection of the provided image:
+        vision_prompt = f"""You are TRINETRA, an elite digital forensics AI. Analyze this image with absolute precision.
 
-[STAGE 1: CONTEXT & ANCHOR AUDIT]
-- Inspect UI elements, text banners, card frames, health bars, and background environments.
-- For gaming/media assets, distinguish related sister franchises by checking structural markers:
-  * Clash Royale vs. Clash of Clans: Look for card frames, elixir bars, crown towers, and arena bridges (Royale) versus village grids, collectors, town halls, and walls (Clash of Clans).
+[STAGE 1: FORENSIC SENSOR DATA]
 
-[STAGE 2: FORENSIC & METADATA SENSOR FUSION]
-- ELA Variance Status: {ela_score}
-- 2D FFT Spectrum Status: {fft_result}
-- Extracted Local OCR Text: {ocr_text}
+Extracted Local OCR Text: {ocr_text}
+
+Live DuckDuckGo Web Context: {osint_result}
+
+2D FFT Spectrum Status: {fft_result}
+
+ELA Variance Status: {ela_result}
+
+[STAGE 2: IDENTIFICATION RULES]
+
+Read the 'Live DuckDuckGo Web Context'. If the web results link the extracted text to a specific video game, product, or franchise (e.g., Clash Royale vs. Clash of Clans), you MUST use that context to accurately identify the visual elements in the image.
+
+If the FFT Spectrum or ELA Variance indicates a 'SYNTHETIC' or 'AI-GENERATED' probability, you MUST classify the image as AI-generated, regardless of how photorealistic it looks.
 
 [STAGE 3: VERDICT & REASONING]
-Provide the final evaluation in the required JSON format, ensuring:
-- `executive_summary`: Accurately name the specific character/entity and its precise franchise/context.
-- `ai_reasoning`: Explain the distinct visual anchors (UI, environment, textures) used to reach your conclusion.
-"""
+Provide the final evaluation in the required JSON schema.
+
+executive_summary: State the exact entity name and context.
+
+ai_reasoning: Explain how the Web Context and Sensor Data prove your verdict."""
         
         extracted_context = "Visual context could not be determined."
         try:
@@ -844,6 +928,9 @@ Provide the final evaluation in the required JSON format, ensuring:
         except Exception as vision_err:
             logger.error(f"Vision API Critical Failure: {vision_err}", exc_info=True)
             raise HTTPException(status_code=502, detail=f"Vision AI Extraction Error: {str(vision_err)}")
+            
+        if ocr_text:
+            extracted_context += f"\n\n[LOCAL OCR TEXT EXTRACTED]: {ocr_text}"
 
         # STAGE 2: Cybersecurity Threat Analyst Reasoning
         threat_prompt = f"""

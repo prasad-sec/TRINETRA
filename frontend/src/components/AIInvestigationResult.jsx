@@ -82,10 +82,8 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
   const syntheticIndicators = reportData.synthetic_indicators || [];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-8 mb-24 flex flex-col relative bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl rounded-sm border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] shadow-2xl shadow-black/80 transform-gpu will-change-transform will-change-[opacity]"
+    <div 
+      className="report-dossier-entry flex-1 w-full max-w-6xl mx-auto p-4 sm:p-8 mb-24 flex flex-col relative bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl rounded-sm border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] shadow-2xl shadow-black/80 transform-gpu"
     >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/10 pb-6 mb-8 shrink-0 gap-4">
@@ -106,7 +104,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
       <div className="flex-1 overflow-y-auto w-full pb-8 pr-2 scrollbar-hide space-y-8">
         
         {/* ================= 2. Executive Summary ================= */}
-        <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+        <div className="report-dossier-entry bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300" style={{ animationDelay: '50ms' }}>
           <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-3 flex items-center gap-2">
             <Activity className="w-4 h-4 text-cyan-500"/> Executive Summary
           </h2>
@@ -116,7 +114,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
         </div>
 
         {/* ================= METRICS GRID (1, 3, 4, Media) ================= */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${isImage ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6 w-full`}>
+        <div className={`report-dossier-entry grid grid-cols-1 md:grid-cols-2 ${isImage ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6 w-full`} style={{ animationDelay: '100ms' }}>
           
           {/* ================= 1. Investigation Verdict ================= */}
           <div className={`md:col-span-1 flex flex-col bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border ${activeStyle.border} rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] transition-all hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(239,68,68,0.15)]`}>
@@ -222,7 +220,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         {/* ================= 5. Key Findings ================= */}
         {keyFindings && keyFindings.length > 0 && (
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
+          <div className="report-dossier-entry bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300" style={{ animationDelay: '150ms' }}>
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500"/> Key Findings
             </h3>
@@ -234,7 +232,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <div className="report-dossier-entry grid grid-cols-1 md:grid-cols-2 gap-6 w-full" style={{ animationDelay: '200ms' }}>
           {/* ================= 6. Evidence Collected ================= */}
           <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
@@ -292,7 +290,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         {/* ================= 8. AI Analyst Reasoning ================= */}
         {aiReasoning ? (
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 md:p-8 relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300">
+          <div className="report-dossier-entry bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 md:p-8 relative overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300" style={{ animationDelay: '250ms' }}>
             <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-zinc-900 via-cyan-500 to-zinc-900 opacity-80 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
             <h3 className="font-mono text-xs font-bold text-cyan-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2 shrink-0">
                <Cpu className="w-4 h-4" /> AI Investigation Reasoning
@@ -302,12 +300,12 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
             </div>
           </div>
         ) : (
-          <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex items-center justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+          <div className="report-dossier-entry bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex items-center justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]" style={{ animationDelay: '250ms' }}>
             <span className="font-mono text-sm italic text-zinc-600">No AI analyst reasoning provided.</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <div className="report-dossier-entry grid grid-cols-1 md:grid-cols-2 gap-6 w-full" style={{ animationDelay: '300ms' }}>
           {/* ================= 9. Recommended Actions ================= */}
           <div className="bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md md:backdrop-blur-xl border border-white/10 rounded-sm p-6 flex flex-col shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.1)] transition-all duration-300">
             <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2 shrink-0">
@@ -346,7 +344,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
 
       </div>
-    </motion.div>
+    </div>
   );
 };
 
