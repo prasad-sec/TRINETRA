@@ -83,3 +83,25 @@
 - **Recursive Artifact Extraction Bridge:** Upgraded the PDF and Email parsers to act as orchestrators. They now recursively extract embedded images, downsample them to 800x800 pixels to prevent server Out-Of-Memory (OOM) faults on low-RAM cloud instances, and route them through internal FFT/ELA sensors.
 - **Keyless OSINT Integration:** Replaced the phone-verified SerpApi with duckduckgo-search, injecting live, rate-limit-free web context into the Groq Vision LLM prompt.
 - **Environment-Aware Security:** Upgraded the SlowAPI rate limiter to read the .env ENVIRONMENT variable, allowing unrestricted local testing while enforcing strict 6-request/minute limits in production.
+
+## [Phase 12] Multilingual Support & Report Localization
+**Objective:** Allow analysts to generate threat reports in their preferred language to support global security teams.
+**Actions:**
+- **Frontend Localization State:** Introduced a `reportLanguage` state in the `LivingDashboard` and propagated it down to all workspace components (Email, PDF, QR, Image, URL).
+- **Backend Translation Routing:** Added `target_language` parsing to the FastAPI endpoints, appending this directive to the AI reasoning prompts.
+- **Schema-Safe Translation:** Instructed the Groq LPU models to localize the `executive_summary` and `ai_reasoning` narrative while maintaining strict JSON keys and keeping technical indicators (IoCs) intact.
+
+## [Phase 13] UI Styling Sweep & Translation Simplification
+**Objective:** Perfect the tactical aesthetic across all components and streamline localization.
+**Actions:**
+- **Standardized Tactical Cards:** Swept all workspace and report panels to enforce a unified glassmorphism aesthetic (`bg-zinc-950/70`, `backdrop-blur-md`, `border-cyan-500/20` with bright hover transitions) and soft `rounded-xl` corners.
+- **Unified Headings & Grid Symmetry:** Standardized all sub-headings to `text-cyan-400 font-mono tracking-wider` and ensured responsive `grid-cols` layout proportions in the report dashboard.
+- **Tactical Loading State:** Upgraded the loading screens with an immersive, pulsing cyan radar animation ("AI Core Processing Vector...").
+- **Localization Lean-Down:** Removed the custom frontend translation library (`react-i18next`) to minimize bundle size. The UI now relies on standard English text and browser-level translation, while the backend API strictly manages dynamic translation of the AI forensic reports via the `target_language` parameter.
+## [Phase 14] Email Multi-Image Extraction Bug Fix
+**Objective:** Ensure the email parsing engine correctly handles multipart containers and extracts all images for Vision AI processing.
+**Actions:**
+- **Parser Optimization:** Fixed an extraction bug in /api/investigate/email where the msg.walk() loop was failing to explicitly skip multipart container wrappers, preventing multiple inline and attached images from being correctly decoded and appended.
+- **Vision Integration:** Verified that the updated parser now passes the complete array of extracted images simultaneously into the Llama 3.2 Vision payload for unified threat analysis.
+- **Frontend Alignment:** Ensured the AIInvestigationResult.jsx dynamic grid properly maps over the extracted images array, correctly rendering all malicious or embedded visual artifacts in the report UI.
+

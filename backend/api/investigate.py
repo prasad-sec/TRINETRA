@@ -9,8 +9,33 @@ import json
 import base64
 import os
 import requests
+import ipaddress
+from functools import lru_cache
 import pymupdf
 import fitz  # PyMuPDF
+
+@lru_cache(maxsize=1024)
+def get_ip_geolocation(ip_address: str) -> str:
+    """Fetches IP geolocation and ISP for advanced threat tracking."""
+    try:
+        clean_ip = '.'.join(str(int(part)) for part in ip_address.split('.'))
+        ip_obj = ipaddress.ip_address(clean_ip)
+        
+        if ip_obj.is_private or ip_obj.is_loopback:
+            return "Internal/Private Network"
+            
+        response = requests.get(f"http://ip-api.com/json/{clean_ip}?fields=country,city,isp", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status") == "success":
+                return f"{data.get('city', 'Unknown')}, {data.get('country', 'Unknown')} (IP: {clean_ip}, ISP: {data.get('isp', 'Unknown')})"
+            elif data.get("message") == "query limit":
+                return "Rate Limit Exceeded"
+        return "Geolocation Failed"
+    except ValueError:
+        return "Invalid_IP"
+    except Exception:
+        return "Lookup Timeout"
 import cv2
 import numpy as np
 import zxingcpp
@@ -140,6 +165,7 @@ ai_engine = AIEngine()
 
 class URLPayload(BaseModel):
     url: str
+    target_language: str = "English"
 
 @router.post("/url", response_model=InvestigationResult)
 @limiter.limit("6/minute")
@@ -152,7 +178,8 @@ async def investigate_url(request: Request, payload: URLPayload):
         # Step 2: Pass IOC dictionary to AIEngine
         ai_result = await ai_engine.analyze_artifact(
             artifact_type="URL",
-            extracted_data=iocs
+            extracted_data=iocs,
+            target_language=payload.target_language
         )
         
         # Step 3: Return the combined InvestigationResult
@@ -183,7 +210,8 @@ async def analyze_email(
     request: Request,
     type: str = Form(...), 
     file: UploadFile = File(None), 
-    content: str = Form(None)
+    content: str = Form(None),
+    target_language: str = Form("English")
 ):
     try:
         headers_available = False
@@ -194,6 +222,8 @@ async def analyze_email(
         attached_image_text = []
         attached_image_urls = []
         email_child_reports = []
+        routing_context = "No routing IPs detected."
+        routing_hops = []
         
         if type == 'upload':
             if not file:
@@ -211,12 +241,30 @@ async def analyze_email(
             metadata["received_spf"] = msg.get("Received-SPF")
             headers_available = True
             
+            received_headers = msg.get_all('Received')
+            
+            if received_headers:
+                ip_pattern = re.compile(r'\b(?:\d{1,3}\.){3}\d{1,3}\b') 
+                
+                for header in received_headers:
+                    ips_found = ip_pattern.findall(header)
+                    for ip in ips_found:
+                        geo_location = get_ip_geolocation(ip)
+                        if geo_location != "Invalid_IP" and not any(ip in hop for hop in routing_hops):
+                            routing_hops.append(f"Hop IP: {ip} | Location: {geo_location}")
+            
+            if routing_hops:
+                routing_context = "\n".join(routing_hops[:5])
+            
             plain_text = ""
             html_text = ""
             max_attachments = 5
             attachments_scanned = 0
+            extracted_images = []
             
             for part in msg.walk():
+                if part.get_content_maintype() == 'multipart':
+                    continue
                 if attachments_scanned >= max_attachments:
                     break
                 content_type = part.get_content_type()
@@ -253,6 +301,15 @@ async def analyze_email(
                 elif part.get_content_maintype() == 'image':
                     try:
                         img_bytes = part.get_payload(decode=True)
+                        img_filename = part.get_filename() or "inline_image"
+                        try:
+                            extracted_images.append({
+                                "filename": img_filename,
+                                "data": base64.b64encode(img_bytes).decode('utf-8'),
+                                "content_type": part.get_content_type()
+                            })
+                        except Exception as enc_e:
+                            print(f"Failed to encode extracted image: {enc_e}")
                         
                         qr_data = extract_qr_from_image_bytes(img_bytes)
                         fft_data = compute_fft_anomaly(img_bytes)
@@ -315,83 +372,83 @@ async def analyze_email(
         }
     
         EMAIL_SYSTEM_PROMPT = f"""
-You are TRINETRA, an advanced, highly analytical AI Threat Intelligence Engine.
-Your objective is to analyze email data and determine if it is a phishing attempt, scam, or safe communication.
+You are TRINETRA, an elite digital forensics AI. Analyze this email payload.
 
-[EMBEDDED ARTIFACT ANALYSIS]
-{chr(10).join(email_child_reports)}
+[ROUTING & GEOLOCATION DATA]
+{routing_context}
 
-CRITICAL RULE: Review the [EMBEDDED ARTIFACT ANALYSIS]. If any extracted child image triggers a SYNTHETIC/AI-GENERATED flag, or if a decoded QR code reveals a suspicious URI, you MUST factor this into the parent document's threat score and flag the hidden payload in the executive summary.
+[GEOLOCATION RULE]: Look at the Routing Data. The oldest/bottom-most public IP is the true origin. Synthesize this into the 'True Origin' key. If the sender claims to be a domestic bank/org but the True Origin is foreign or a known cloud host, flag as SUSPICIOUS.
 
-You will receive a JSON payload containing:
-1. `headers_available`: Boolean indicating if technical headers are present.
-2. `metadata`: Header data (if available).
-3. `email_body`: The raw text of the email.
-4. `email_urls`: A list of URLs found in the email.
-5. `has_pdf_attachment`: Boolean indicating if a PDF attachment was found.
-6. `attached_pdf_text`: Extracted text from attached PDF (truncated to 2000 chars).
-7. `attached_pdf_urls`: A list of URLs found embedded in the attached PDF.
-8. `has_image_attachment`: Boolean indicating if an image attachment was found.
-9. `attached_image_text`: Extracted text from image (truncated to 2000 chars).
-10. `attached_image_urls`: A list of URLs found in QR codes in the image.
+[TONE & ACCESSIBILITY RULE]: 
+- You must maintain forensic professionalism by keeping technical terms relevant to the module (e.g., "Levenshtein distance" for URLs, "Base64 encoding" for PDFs, "FFT anomalies" for Images).
+- However, you MUST immediately explain these terms in simple, plain-English phrases so a non-technical user understands their impact. 
+- Example for URL: "The domain uses typosquatting (a fake URL designed to look like a real one, utilizing a Levenshtein distance of 1)."
+- Example for PDF: "The file contains an embedded JavaScript payload (a hidden script designed to execute malicious code when the document is opened)."
+- Write the `executive_summary` and `ai_reasoning` in a highly readable, user-friendly format while keeping the strict technical data isolated inside the `evidence_collected` and `indicators_of_compromise` arrays.
+- Always provide at least two actionable `recommended_actions` in simple terms.
 
-INVESTIGATION RULES:
-- If `headers_available` is true, analyze SPF/DKIM/DMARC results and check for domain spoofing.
-- If `headers_available` is false (user pasted text), DO NOT mention the lack of headers as a failure. Instead, heavily weight your analysis on LINGUISTIC BEHAVIOR (social engineering, false urgency, authority impersonation, financial manipulation) and the validity of the `email_urls`.
-- Cross-reference the email body with `attached_image_text` (looking for extortion, fake warnings, or invoice scams inside pictures) and `attached_image_urls` (looking for phishing URLs decoded from QR codes).
-- The AI must flag the entire artifact as MALICIOUS if the email text appears benign but the attached PDF contains phishing links, false urgency, or fake invoice details.
-- If malicious intent is found in the images, the entire artifact must be flagged as MALICIOUS.
-- Any mismatch between the claimed sender (e.g., a bank name in the text) and the extracted URLs strongly indicates a MALICIOUS threat.
+[LANGUAGE RULE]:
 
-GEOGRAPHIC & DOMAIN CONTEXT RULES:
-Maintain maximum strictness for all global security standards (including generic passwords and DKIM/SPF/DMARC failures) with ONE specific regional exception:
+You MUST write the values for executive_summary, ai_reasoning, and recommended_actions entirely in this language: {target_language}.
 
-Indian Banking Infrastructure Exception:
-It is a standard regional practice for Indian financial institutions (e.g., Saraswat Bank, SBI, HDFC, ICICI, or domains ending in `.in` / `.co.in`) to send encrypted PDF statements and include the password format (e.g., Customer ID, Name + DOB) in the email body. 
-- IF the sender is a verified Indian bank (SPF/DMARC pass) AND the email contains e-statement password instructions, DO NOT flag it as suspicious. 
-- IF the email claims to be from an international bank (e.g., Chase, Barclays) or an unknown global domain and uses this generic password tactic, FLAG IT IMMEDIATELY as a high-risk security violation.
-- For verified Indian domains, if DKIM fails but SPF and DMARC pass, treat the email as legitimate, as local transit routes frequently break DKIM signatures.
+You MUST keep the actual JSON keys, evidence_collected values, and indicators_of_compromise strictly in English to prevent UI parsing errors.
 
-You MUST respond with ONLY a valid JSON object. No markdown formatting, no conversational text.
-
-EXPECTED JSON SCHEMA:
-{
-  "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
-  "threat_score": <int between 0-100, where 100 is critical danger>,
-  "confidence": <int between 0-100>,
-  "executive_summary": "<A concise 2-sentence executive summary explaining the primary threat or safe status>",
-  "evidence_collected": {
-    "sender": "<sender email or name if found>",
-    "authentication": "<headers status>",
-    "urls_found": "<number of URLs>",
-    "urgency_level": "<High/Medium/Low>"
-  },
-  "indicators_of_compromise": [
-    "<List specific red flags found, e.g., 'DKIM signature failed', 'URL points to suspicious external domain', 'Creates false sense of urgency regarding account suspension'>"
-  ],
-  "ai_reasoning": "<A detailed, explainable paragraph breaking down the evidence and explaining exactly why TRINETRA reached this conclusion based on the provided data>",
-  "recommended_actions": [
-    "<Specific recommendation 1>",
-    "<Specific recommendation 2>"
-  ]
-}
+Respond strictly in this JSON format:
+{{
+    "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
+    "threat_score": <integer 0-100>,
+    "confidence": <integer 0-100>,
+    "executive_summary": "<summary string>",
+    "ai_reasoning": "<reasoning string>",
+    "evidence_collected": {{
+        "Claimed Sender": "<sender email>",
+        "True Origin": "<City, (IP: Country x.x.x.x)> or 'Hidden/Masked'",
+        "Authentication": "<SPF/DKIM/DMARC status>",
+        "Urls Found": "<count>",
+        "Urgency Level": "<High/Medium/Low>"
+    }},
+    "indicators_of_compromise": ["<List technical IOCs>"],
+    "recommended_actions": ["<e.g., 'Do not click any links', 'Call your bank directly via their official app'>"]
+}}
 """
     
         try:
-            chat_completion = await ai_engine.client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": EMAIL_SYSTEM_PROMPT,
-                    },
-                    {
-                        "role": "user",
-                        "content": json.dumps(payload_dict),
-                    }
-                ],
-                model=ai_engine.model,
-                temperature=0.2
-            )
+            if extracted_images:
+                user_content = [{"type": "text", "text": json.dumps(payload_dict)}]
+                for img in extracted_images:
+                    user_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{img['content_type']};base64,{img['data']}"}
+                    })
+                chat_completion = await ai_engine.client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": EMAIL_SYSTEM_PROMPT,
+                        },
+                        {
+                            "role": "user",
+                            "content": user_content,
+                        }
+                    ],
+                    model="llama-3.2-11b-vision-preview",
+                    temperature=0.2
+                )
+            else:
+                chat_completion = await ai_engine.client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": EMAIL_SYSTEM_PROMPT,
+                        },
+                        {
+                            "role": "user",
+                            "content": json.dumps(payload_dict),
+                        }
+                    ],
+                    model=ai_engine.model,
+                    temperature=0.2
+                )
             
             # 1. Extract the raw string from the Groq API response
             raw_content = chat_completion.choices[0].message.content
@@ -410,6 +467,14 @@ EXPECTED JSON SCHEMA:
             
             # 3. Parse using the global utility
             ai_response = parse_llm_json(raw_content, fallback_schema)
+            
+            if "evidence_collected" not in ai_response:
+                ai_response["evidence_collected"] = {}
+            ai_response["evidence_collected"]["routing_hops"] = routing_hops if routing_hops else ["No public routing hops found"]
+            
+            if extracted_images:
+                ai_response["evidence_collected"]["images"] = extracted_images
+                
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     
@@ -450,7 +515,7 @@ EXPECTED JSON SCHEMA:
 
 @router.post("/pdf")
 @limiter.limit("6/minute")
-async def investigate_pdf(request: Request, file: UploadFile = File(...)):
+async def investigate_pdf(request: Request, file: UploadFile = File(...), target_language: str = Form("English")):
     try:
         if not (file.filename.endswith('.pdf') or file.content_type == 'application/pdf'):
             raise HTTPException(status_code=400, detail="Invalid file type. Must be a PDF.")
@@ -527,16 +592,30 @@ GEOGRAPHIC & DOMAIN CONTEXT RULES:
 - IF the text contains e-statement password instructions typical of Indian financial institutions, DO NOT flag it as suspicious purely based on this generic password tactic.
 - IF it claims to be from an international bank and uses this tactic, FLAG IT as high-risk.
 
+[TONE & ACCESSIBILITY RULE]: 
+- You must maintain forensic professionalism by keeping technical terms relevant to the module (e.g., "Levenshtein distance" for URLs, "Base64 encoding" for PDFs, "FFT anomalies" for Images).
+- However, you MUST immediately explain these terms in simple, plain-English phrases so a non-technical user understands their impact. 
+- Example for URL: "The domain uses typosquatting (a fake URL designed to look like a real one, utilizing a Levenshtein distance of 1)."
+- Example for PDF: "The file contains an embedded JavaScript payload (a hidden script designed to execute malicious code when the document is opened)."
+- Write the `executive_summary` and `ai_reasoning` in a highly readable, user-friendly format while keeping the strict technical data isolated inside the `evidence_collected` and `indicators_of_compromise` arrays.
+- Always provide at least two actionable `recommended_actions` in simple terms.
+
+[LANGUAGE RULE]:
+
+You MUST write the values for executive_summary, ai_reasoning, and recommended_actions entirely in this language: {target_language}.
+
+You MUST keep the actual JSON keys, evidence_collected values, and indicators_of_compromise strictly in English to prevent UI parsing errors.
+
 You MUST respond with ONLY a valid JSON object matching this schema:
-{
+{{
   "verdict": "SAFE" | "SUSPICIOUS" | "MALICIOUS",
   "threat_score": <int between 0-100, where 100 is critical danger>,
   "confidence": <int between 0-100>,
   "executive_summary": "<A concise 2-sentence executive summary explaining the primary threat or safe status>",
-  "evidence_collected": {
+  "evidence_collected": {{
     "urls_found": "<number of URLs>",
     "urgency_level": "<High/Medium/Low>"
-  },
+  }},
   "indicators_of_compromise": [
     "<List of specific red flags>"
   ],
@@ -544,7 +623,7 @@ You MUST respond with ONLY a valid JSON object matching this schema:
   "recommended_actions": [
     "<Specific recommendation>"
   ]
-}
+}}
 """
     
         try:
@@ -607,7 +686,7 @@ You MUST respond with ONLY a valid JSON object matching this schema:
 
 @router.post("/qr")
 @limiter.limit("6/minute")
-async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)):
+async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...), target_language: str = Form("English")):
     # 1. Reset the file buffer and read bytes
     await file.seek(0)
     contents = await file.read()
@@ -686,6 +765,20 @@ async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)
         2. If this is a standard UPI payment link (e.g., upi://pay...), recognize that it is completely normal. Standard tracking parameters in UPI/GPay links are harmless and expected.
         3. Your reasoning and recommendations MUST match the verdict! If the verdict is SAFE, reassure the user it looks like a normal payment QR code. Do NOT tell them to cancel the transaction if it is safe.
         4. If it is safe, your recommended action should simply be: "Verify the recipient's name on your UPI app before entering your PIN."
+
+        [TONE & ACCESSIBILITY RULE]: 
+        - You must maintain forensic professionalism by keeping technical terms relevant to the module (e.g., "Levenshtein distance" for URLs, "Base64 encoding" for PDFs, "FFT anomalies" for Images).
+        - However, you MUST immediately explain these terms in simple, plain-English phrases so a non-technical user understands their impact. 
+        - Example for URL: "The domain uses typosquatting (a fake URL designed to look like a real one, utilizing a Levenshtein distance of 1)."
+        - Example for PDF: "The file contains an embedded JavaScript payload (a hidden script designed to execute malicious code when the document is opened)."
+        - Write the `executive_summary` and `ai_reasoning` in a highly readable, user-friendly format while keeping the strict technical data isolated inside the `evidence_collected` and `indicators_of_compromise` arrays.
+        - Always provide at least two actionable `recommended_actions` in simple terms.
+
+        [LANGUAGE RULE]:
+
+        You MUST write the values for executive_summary, ai_reasoning, and recommended_actions entirely in this language: {target_language}.
+
+        You MUST keep the actual JSON keys, evidence_collected values, and indicators_of_compromise strictly in English to prevent UI parsing errors.
 
         Respond ONLY with a valid JSON object matching this exact schema:
         {{
@@ -811,7 +904,7 @@ def free_osint_lookup(ocr_text: str) -> str:
 
 @router.post("/image")
 @limiter.limit("6/minute")
-async def investigate_image_endpoint(request: Request, file: UploadFile = File(...)):
+async def investigate_image_endpoint(request: Request, file: UploadFile = File(...), target_language: str = Form("English")):
     await file.seek(0)
     file_bytes = await file.read()
     fft_result = compute_fft_anomaly(file_bytes)
@@ -968,6 +1061,20 @@ STEP 4: HYBRID ASSET & COMPOSITE RULE (CRITICAL)
 OUTPUT REQUIREMENTS:
 - You must strictly output the JSON schema.
 - Explicitly cite the specific structural or corner anomalies in "synthetic_indicators" and "ai_reasoning".
+
+[TONE & ACCESSIBILITY RULE]: 
+- You must maintain forensic professionalism by keeping technical terms relevant to the module (e.g., "Levenshtein distance" for URLs, "Base64 encoding" for PDFs, "FFT anomalies" for Images).
+- However, you MUST immediately explain these terms in simple, plain-English phrases so a non-technical user understands their impact. 
+- Example for URL: "The domain uses typosquatting (a fake URL designed to look like a real one, utilizing a Levenshtein distance of 1)."
+- Example for PDF: "The file contains an embedded JavaScript payload (a hidden script designed to execute malicious code when the document is opened)."
+- Write the `executive_summary` and `ai_reasoning` in a highly readable, user-friendly format while keeping the strict technical data isolated inside the `evidence_collected` and `indicators_of_compromise` arrays.
+- Always provide at least two actionable `recommended_actions` in simple terms.
+
+[LANGUAGE RULE]:
+
+You MUST write the values for executive_summary, ai_reasoning, and recommended_actions entirely in this language: {target_language}.
+
+You MUST keep the actual JSON keys, evidence_collected values, and indicators_of_compromise strictly in English to prevent UI parsing errors.
 
 Respond ONLY with a valid JSON object matching this exact schema:
 {{

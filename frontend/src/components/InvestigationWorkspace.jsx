@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crosshair, Shield, Link, Mail, FileText, QrCode, Image as ImageIcon } from 'lucide-react';
 import AIInvestigationResult from './AIInvestigationResult';
@@ -7,6 +7,29 @@ import EmailWorkspace from './EmailWorkspace';
 import PdfWorkspace from './PdfWorkspace';
 import QrWorkspace from './QrWorkspace';
 import ImageWorkspace from './ImageWorkspace';
+
+// Fix 4: Sub-status messages shown under the active step label during long waits.
+// Index maps to STAGES index (0-6); steps not listed get the default ticker.
+const STAGE_SUB_STATUSES = {
+  3: ['Cross-referencing IOC feeds…', 'Querying threat databases…', 'Geo-locating suspicious assets…'],
+  4: ['Profiling behavioral fingerprints…', 'Mapping sandbox signals…', 'Scoring anomaly patterns…'],
+  5: ['Correlating evidence…', 'Building verdict chain…', 'Synthesising AI report…', 'Estimating confidence…'],
+};
+const DEFAULT_SUB_STATUSES = ['Processing…', 'Extracting signals…', 'Parsing artifact…'];
+
+// Animated ellipsis — 3 dots fade in sequentially
+const AnimatedEllipsis = () => (
+  <span className="inline-flex gap-[2px] ml-1">
+    {[0, 1, 2].map(i => (
+      <motion.span
+        key={i}
+        className="text-amber-400 font-bold"
+        animate={{ opacity: [0, 1, 0] }}
+        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.25, ease: 'easeInOut' }}
+      >.</motion.span>
+    ))}
+  </span>
+);
 
 const STAGES = [
   "Artifact Received",
@@ -18,7 +41,7 @@ const STAGES = [
   "Investigation Report Generated"
 ];
 
-const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => {
+const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, reportLanguage = 'English' }) => {
   const [activeTab, setActiveTab] = useState('URL');
   // State machine: idle, investigating, reasoning, completed, error
   const [investigationState, setInvestigationState] = useState('idle'); 
@@ -29,6 +52,10 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
   const [inputUrl, setInputUrl] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [apiResult, setApiResult] = useState(null);
+
+  // Fix 4: Track sub-status index per stage for the cycling ticker
+  const [subStatusIdx, setSubStatusIdx] = useState(0);
+  const subStatusTimerRef = useRef(null);
 
   const tabs = [
     { id: 'URL', label: 'URL', icon: Link, placeholder: 'Enter suspicious URL or IP...' },
@@ -41,6 +68,19 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
   useEffect(() => {
     if (onStateChange) onStateChange(investigationState);
   }, [investigationState, onStateChange]);
+
+  // Fix 4: Cycle sub-status text whenever the active stage changes
+  useEffect(() => {
+    setSubStatusIdx(0);
+    if (subStatusTimerRef.current) clearInterval(subStatusTimerRef.current);
+    if (investigationState === 'investigating' || investigationState === 'reasoning') {
+      const messages = STAGE_SUB_STATUSES[activeStage] || DEFAULT_SUB_STATUSES;
+      subStatusTimerRef.current = setInterval(() => {
+        setSubStatusIdx(prev => (prev + 1) % messages.length);
+      }, 1800);
+    }
+    return () => { if (subStatusTimerRef.current) clearInterval(subStatusTimerRef.current); };
+  }, [activeStage, investigationState]);
 
   // Pipeline Progression Orchestrator
   useEffect(() => {
@@ -103,14 +143,12 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
   };
 
   const handleStartInvestigation = async () => {
-    let currentInputUrl = inputUrl;
     if (activeTab === 'URL') {
       const trimmedUrl = inputUrl?.trim() || '';
       if (!trimmedUrl || (!trimmedUrl.includes('.') && !trimmedUrl.includes(':'))) {
         setErrorMsg('Please enter a valid URL or IP address');
         return;
       }
-      currentInputUrl = trimmedUrl;
       setErrorMsg('');
     }
 
@@ -119,8 +157,8 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
 
       try {
         const bodyPayload = activeTab === 'URL' 
-          ? JSON.stringify({ url: inputUrl }) 
-          : JSON.stringify({ url: 'dropped_artifact' });
+          ? JSON.stringify({ url: inputUrl, target_language: reportLanguage }) 
+          : JSON.stringify({ url: 'dropped_artifact', target_language: reportLanguage });
         
         const res = await fetch('http://localhost:8000/api/investigate/url', {
           method: 'POST',
@@ -132,7 +170,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
         
         const data = await res.json();
         handleAnalysisComplete(data);
-      } catch (_err) {
+      } catch {
         setInvestigationState('error');
         setErrorMsg('Connection Error: Unable to reach FastAPI backend.');
       }
@@ -160,10 +198,10 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
       {investigationState === 'completed' ? (
         <motion.div 
           key="report"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -15 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           className="w-full h-full flex-1 flex flex-col"
         >
           <AIInvestigationResult 
@@ -182,11 +220,11 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
       ) : (
         <motion.div 
           key="workspace"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
-          className="flex-1 flex flex-col items-center justify-start relative p-4 md:p-8 transition-colors duration-500 w-full overflow-hidden"
+          initial={{ opacity: 0, y: -15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 15 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="flex-1 flex flex-col items-center justify-start relative p-4 md:p-8 transition-colors w-full overflow-hidden"
         >
           
           {/* Background intensity during investigation */}
@@ -297,8 +335,8 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                         </div>
                       ) : activeTab === 'EMAIL' ? (
                         <EmailWorkspace 
+                          targetLanguage={reportLanguage}
                           setReportData={handleAnalysisComplete}
-                          setEyeStatus={() => {}}
                           setIsInvestigating={(status) => {
                             if (status) initInvestigation();
                             else if (investigationState !== 'completed') setInvestigationState('error');
@@ -306,8 +344,8 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                         />
                       ) : activeTab === 'PDF' ? (
                         <PdfWorkspace 
+                          targetLanguage={reportLanguage}
                           onAnalysisComplete={handleAnalysisComplete}
-                          setEyeStatus={() => {}}
                           setIsInvestigating={(status) => {
                             if (status) initInvestigation();
                           }}
@@ -315,6 +353,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                         />
                       ) : activeTab === 'QR' ? (
                         <QrWorkspace 
+                          targetLanguage={reportLanguage}
                           onResult={handleAnalysisComplete}
                           setIsInvestigating={(status) => {
                             if (status) initInvestigation();
@@ -322,8 +361,8 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                         />
                       ) : activeTab === 'IMAGES' ? (
                         <ImageWorkspace 
+                          targetLanguage={reportLanguage}
                           onResult={handleAnalysisComplete}
-                          setEyeStatus={() => {}}
                           setIsInvestigating={(status) => {
                             if (status) initInvestigation();
                             else if (investigationState !== 'completed') setInvestigationState('error');
@@ -331,9 +370,9 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                           setInvestigationState={setInvestigationState}
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center p-8 md:p-12 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 rounded-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-all duration-500 hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(6,182,212,0.15)]">
+                        <div className="flex flex-col items-center justify-center p-8 md:p-12 bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors rounded-xl shadow-xl shadow-cyan-950/30 w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 duration-500">
                            <Shield className="w-10 h-10 md:w-12 md:h-12 text-zinc-600 mb-4" />
-                           <h3 className="font-mono text-xs md:text-sm font-semibold tracking-widest text-zinc-300 uppercase mb-2">Drop Artifact Here</h3>
+                           <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-2">Drop Artifact Here</h3>
                            <p className="font-mono text-[10px] md:text-xs text-zinc-500 text-center">Supported formats: Email, PDF, QR Code, Images.</p>
                         </div>
                       )}
@@ -349,19 +388,21 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                     exit={{ opacity: 0, x: -20 }}
                     className="w-full flex flex-col justify-center text-center md:text-left items-center md:items-start"
                   >
-                    <div className="mb-4 md:mb-6">
-                      <h3 className="font-sans text-xs md:text-sm font-semibold tracking-widest text-cyan-400 uppercase mb-1">
-                        {investigationState === 'reasoning' ? 'AI Reasoning Active' : 'Investigation Active'}
+                    <div className="mb-6 md:mb-8 flex flex-col items-center md:items-start">
+                      <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-2">
+                        {investigationState === 'reasoning' ? 'AI Core Processing Vector...' : 'AI Core Processing Vector...'}
                       </h3>
-                      <p className="font-mono text-[10px] md:text-xs text-slate-500">
+                      <p className="font-mono text-[10px] md:text-xs text-zinc-500">
                         {investigationState === 'reasoning' ? 'Correlating evidence and establishing verdict...' : 'Analyzing artifact signatures and behavior...'}
                       </p>
                     </div>
 
                     <div className="flex flex-col justify-center gap-3 w-full max-w-[250px] md:max-w-none items-start">
                       {STAGES.map((stage, idx) => {
-                        const isActive = idx === activeStage;
+                        const isActive    = idx === activeStage;
                         const isCompleted = idx < activeStage;
+                        const messages    = STAGE_SUB_STATUSES[idx] || DEFAULT_SUB_STATUSES;
+                        const subText     = messages[subStatusIdx % messages.length];
 
                         return (
                           <div key={stage} className="flex items-center gap-3 md:gap-4">
@@ -375,13 +416,30 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true }) => 
                                 <div className={`w-px h-5 md:h-6 ${isCompleted ? 'bg-cyan-500/50' : 'bg-zinc-800'}`} />
                               )}
                             </div>
-                            <span className={`font-mono text-[9px] md:text-xs uppercase tracking-wider transition-colors duration-300 ${
-                              isCompleted ? 'text-cyan-500' : 
-                              isActive ? 'text-amber-400' : 
-                              'text-slate-600'
-                            }`}>
-                              {stage}
-                            </span>
+                            <div className="flex flex-col min-w-0">
+                              <span className={`font-mono text-[9px] md:text-xs uppercase tracking-wider transition-colors duration-300 ${
+                                isCompleted ? 'text-cyan-500' : 
+                                isActive ? 'text-amber-400' : 
+                                'text-slate-600'
+                              }`}>
+                                {stage}{isActive && <AnimatedEllipsis />}
+                              </span>
+                              {/* Fix 4: Cycling sub-status line under the active step */}
+                              {isActive && (
+                                <AnimatePresence mode="wait">
+                                  <motion.span
+                                    key={subStatusIdx}
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -4 }}
+                                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                                    className="font-mono text-[8px] md:text-[10px] text-zinc-500 mt-0.5 italic"
+                                  >
+                                    {subText}
+                                  </motion.span>
+                                </AnimatePresence>
+                              )}
+                            </div>
                           </div>
                         );
                       })}

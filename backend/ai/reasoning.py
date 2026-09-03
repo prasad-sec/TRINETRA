@@ -25,7 +25,7 @@ class AIEngine:
         self.client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
         self.model = "openai/gpt-oss-120b"
         
-    async def analyze_artifact(self, artifact_type: str, extracted_data: dict) -> dict:
+    async def analyze_artifact(self, artifact_type: str, extracted_data: dict, target_language: str = "English") -> dict:
         system_prompt = (
             "You are an Expert Cyber Threat Intelligence Analyst. Your job is to forensically analyze URLs and identify phishing, typosquatting, and malicious intent. "
             f"Your task is to analyze the provided {artifact_type} extracted data and identify security threats. "
@@ -46,6 +46,21 @@ class AIEngine:
             "- If your reasoning identifies 'typosquatting', 'phishing', or 'malicious intent', the `threat_score` MUST be between 85-100 and the `threat_verdict` MUST be 'CRITICAL'.\n"
             "- If you identify suspicious keywords but no direct malice, the score MUST be 50-84 and verdict 'SUSPICIOUS'.\n"
             "- ONLY output 'SAFE' (0-49) if the domain is verified and clean. NEVER output a low score if your reasoning states the site is dangerous.\n"
+            "\n"
+            "[TONE & ACCESSIBILITY RULE]:\n"
+            "- You must maintain forensic professionalism by keeping technical terms relevant to the module (e.g., \"Levenshtein distance\" for URLs, \"Base64 encoding\" for PDFs, \"FFT anomalies\" for Images).\n"
+            "- However, you MUST immediately explain these terms in simple, plain-English phrases so a non-technical user understands their impact.\n"
+            "- Example for URL: \"The domain uses typosquatting (a fake URL designed to look like a real one, utilizing a Levenshtein distance of 1).\"\n"
+            "- Example for PDF: \"The file contains an embedded JavaScript payload (a hidden script designed to execute malicious code when the document is opened).\"\n"
+            "- Write the `executive_summary` and `ai_reasoning` in a highly readable, user-friendly format while keeping the strict technical data isolated inside the `evidence_collected` and `indicators_of_compromise` arrays.\n"
+            "- Always provide at least two actionable `recommended_actions` in simple terms.\n"
+            "\n"
+            "[LANGUAGE RULE]:\n"
+            "\n"
+            f"You MUST write the values for executive_summary, ai_reasoning, and recommended_actions entirely in this language: {target_language}.\n"
+            "\n"
+            "You MUST keep the actual JSON keys, evidence_collected values, and indicators_of_compromise strictly in English to prevent UI parsing errors.\n"
+            "\n"
             "You MUST output your response in valid JSON matching this exact schema: { 'threat_verdict': 'string', 'threat_score': 0, 'ai_confidence': 95, 'confidence_explanation': 'string', 'executive_summary': 'string', 'key_findings': ['finding 1'], 'evidence_collected': {'key': 'value'}, 'indicators_of_compromise': {'type': ['ioc1']}, 'ai_analyst_reasoning': 'string', 'recommended_actions': ['action 1'], 'investigation_conclusion': 'string' }.\n"
             "Do not wrap your response in markdown code blocks. Output raw JSON starting with { and ending with }."
         )

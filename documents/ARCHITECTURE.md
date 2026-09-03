@@ -59,7 +59,7 @@ The presentation layer of TRINETRA rejects generic, commercial web design conven
 
 ### 3.1 Core Technologies & Visual Framework
 - **React 18 & State Machine UI:** Built on a strict asynchronous UI state machine (`idle`, `staging`, `investigating`, `reasoning`, `completed`, `error`). This ensures deterministic transitions during file drop events, stream execution, and diagnostic visualization, eliminating race conditions or inconsistent UI states during concurrent investigation flows.
-- **Tailwind CSS (Analyst Console Design System):** Employs an **absolute dark mode** (`bg-zinc-950`), sharp geometric layouts, and **tactical glassmorphism** (`bg-zinc-950/75` with `backdrop-blur-2xl` and sub-pixel compound edge lighting). High-contrast **strict monospace typography** (utilizing tracking-wide letterforms for telemetry logs, hashes, and network headers) prevents misidentification of homoglyphs and malicious URLs.
+- **Tailwind CSS (Analyst Console Design System):** Employs an **absolute dark mode** (`bg-zinc-950`), sharp geometric layouts, and **tactical glassmorphism** (`bg-zinc-950/70` with `backdrop-blur-md`, `border-cyan-500/20`, and `rounded-xl` corners). High-contrast **strict monospace typography** (utilizing tracking-wide letterforms for telemetry logs, hashes, and network headers) prevents misidentification of homoglyphs and malicious URLs.
 - **Framer Motion & Animation Kinetics:** Hardware-accelerated animations are integrated not as aesthetic embellishment, but as cognitive state feedback. Key kinetic installations include:
   - **The Cybernetic Third Eye HUD:** A custom-engineered scalable vector graphics (SVG) assembly featuring counter-rotating concentric astrolabe rings and an animated Mecha-Iris aperture that scales open during initial diagnostic synchronization.
   - **Interactive Technical Documentation Hub:** Within the system dossier (`SYSTEM.ABOUT`), an unmounting bento grid transitions seamlessly into an expanding dark-glass inspection drawer via layout-id morphing and `AnimatePresence` state retention.
@@ -82,7 +82,7 @@ The application layer is powered by a **FastAPI** service engineered for non-blo
    - **Feature Extraction:** Deconstructs complete Uniform Resource Identifiers to evaluate top-level domain (TLD) risk scores, domain creation age heuristics, IP-literal routing, suspicious parameter permutations, open-redirect chains, and Levenshtein distance typosquatting against high-value financial brand indexes.
 2. **Email Forensics (`/api/investigate/email`):**
    - **Engine:** Native Python `email` (RFC 2822) and MIME structure traversal parsers paired with attachment extraction pipelines.
-   - **Feature Extraction:** Dissects routing header chains to verify authentication alignment (SPF, DKIM, DMARC), extracts IP relay paths, and detects Return-Path vs. From header spoofing. Simultaneously decodes MIME multipart bodies to scan for linguistic urgency markers and implements a Deployment-Safe Recursive Artifact Bridge that extracts up to 5 embedded image attachments, downsamples them for memory safety, and routes them through mathematical vision sensors (FFT/ELA) to detect concealed AI payloads.
+   - **Feature Extraction:** Dissects routing header chains to verify authentication alignment (SPF, DKIM, DMARC), extracts IP relay paths, and detects Return-Path vs. From header spoofing. Simultaneously decodes MIME multipart bodies (bypassing container wrappers) to scan for linguistic urgency markers and implements a Deployment-Safe Recursive Artifact Bridge that extracts all embedded and attached images (up to 5), downsamples them for memory safety, routes them through mathematical vision sensors (FFT/ELA), and passes them simultaneously to the Vision LLM to detect concealed AI payloads.
 3. **PDF Document Inspector (`/api/investigate/pdf`):**
    - **Engine:** `PyMuPDF` (`fitz`) stream extractor paired with local pattern-matching regex engines.
    - **Feature Extraction:** Reads PDF binary structures directly in RAM without launching external reader execution wrappers or executing embedded JavaScript engines. Extracts embedded annotations and URIs, and utilizes the Recursive Artifact Bridge to parse and recursively analyze embedded images for hidden quishing or deepfake threats without exceeding cloud server RAM constraints.
@@ -117,6 +117,9 @@ To eliminate hallucinations and ensure programmatic stability within the React U
   }
 }
 ```
+
+### 5.3 Multilingual Threat Reporting
+To support global SOC teams, the intelligence layer dynamically ingests a `target_language` parameter from the UI orchestrator. This instruction is injected into the primary reasoning prompt, forcing the LLM to output the `executive_summary` and `ai_reasoning` fields in the user's preferred language while preserving the English definitions of technical IoCs and maintaining the exact JSON schema structure. This backend-driven approach keeps the frontend lean and high-performance by bypassing heavy client-side localization libraries.
 
 ---
 

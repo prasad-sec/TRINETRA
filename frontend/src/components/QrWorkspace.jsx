@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
-import { Upload, FileImage, ShieldAlert, CheckCircle, RefreshCw, X } from "lucide-react";
+import { Upload, FileImage, ShieldAlert, RefreshCw, X } from "lucide-react";
 
-export default function QrWorkspace({ onResult, setEyeStatus, setIsInvestigating, setInvestigationState }) {
+export default function QrWorkspace({ onResult, setIsInvestigating, setInvestigationState, targetLanguage }) {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +50,9 @@ export default function QrWorkspace({ onResult, setEyeStatus, setIsInvestigating
 
     const formData = new FormData();
     formData.append("file", file);
+    if (targetLanguage) {
+      formData.append("target_language", targetLanguage);
+    }
 
     try {
       const response = await fetch("http://localhost:8000/api/investigate/qr", {
@@ -99,13 +102,13 @@ export default function QrWorkspace({ onResult, setEyeStatus, setIsInvestigating
         }}
         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
         onDrop={handleDrop}
-        className={`cursor-pointer border-2 border-dashed border-zinc-800 hover:border-cyan-500/50 bg-zinc-950/50 rounded-2xl p-8 text-center transition-all duration-200 ${
+        className={`cursor-pointer border-2 border-dashed border-cyan-500/20 hover:border-cyan-500/40 bg-zinc-950/70 backdrop-blur-md shadow-xl shadow-cyan-950/30 rounded-xl p-8 text-center transition-all duration-300 ${
           isLoading ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
         {!file ? (
           <div className="flex flex-col items-center space-y-4">
-            <div className="p-4 bg-zinc-900 rounded-full text-cyan-400 border border-zinc-800">
+            <div className="p-4 bg-zinc-950/70 backdrop-blur-md rounded-full text-cyan-400 border border-cyan-500/20">
               <Upload className="w-8 h-8"/>
             </div>
             <div>
@@ -137,7 +140,7 @@ export default function QrWorkspace({ onResult, setEyeStatus, setIsInvestigating
               <img
                 src={previewUrl}
                 alt="QR Preview"
-                className="w-32 h-32 object-contain rounded-lg border border-zinc-700 bg-zinc-900 p-2"
+                className="w-32 h-32 object-contain rounded-xl border border-cyan-500/20 bg-zinc-950/70 backdrop-blur-md shadow-xl shadow-cyan-950/30 p-2"
               />
               <button
                 type="button"

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, Info, CheckCircle } from 'lucide-react';
+import { UploadCloud, Info, CheckCircle } from 'lucide-react';
 
-export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInvestigating }) {
+export default function EmailWorkspace({ setReportData, setIsInvestigating, targetLanguage }) {
   const [emailFile, setEmailFile] = useState(null);
   const [emailText, setEmailText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,6 +19,10 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
     } else {
       formData.append('type', 'text');
       formData.append('content', emailText);
+    }
+    
+    if (targetLanguage) {
+      formData.append('target_language', targetLanguage);
     }
 
     try {
@@ -90,7 +94,7 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
     <div className="w-full animate-[fadeIn_0.5s_ease-in-out] transition-opacity duration-700 ease-in-out opacity-100">
       {/* File Upload Zone */}
       <div 
-        className={`w-full border-2 border-dashed border-slate-700/50 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-900/30 transition-colors ${!isSubmitting ? 'hover:bg-slate-800/50 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+        className={`w-full border-2 border-dashed border-cyan-500/20 hover:border-cyan-500/40 bg-zinc-950/70 backdrop-blur-md shadow-xl shadow-cyan-950/30 rounded-xl p-8 flex flex-col items-center justify-center transition-colors duration-300 ${!isSubmitting ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
         onClick={handleDropzoneClick}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
@@ -136,7 +140,7 @@ export default function EmailWorkspace({ setReportData, setEyeStatus, setIsInves
 
       {/* Text Area */}
       <textarea
-        className={`w-full h-40 bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 text-slate-300 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 resize-none font-mono text-sm placeholder-slate-600 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`w-full h-40 bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 text-zinc-300 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 resize-none font-sans text-sm leading-relaxed placeholder-slate-600 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
         placeholder={`Example format:\nFrom: Support <admin@security.com>\nSubject: Urgent Account Review\n\nDear User, your account is locked.\nClick here to verify: https://suspicious-link.com`}
         value={emailText}
         onChange={handleTextChange}

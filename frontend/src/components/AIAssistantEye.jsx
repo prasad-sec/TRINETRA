@@ -1,9 +1,16 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Fix 3: iris radius stays fixed at IDLE_R; we animate scale instead so
+// Framer Motion can tween it. Spring stiffness:120 / damping:18 ≈ 450ms
+// ease-out settle, zero overshoot.
+const IRIS_IDLE_R  = 15;
+const IRIS_BUSY_R  = 20;
+const IRIS_SCALE_BUSY = IRIS_BUSY_R / IRIS_IDLE_R; // 1.333…
+
 const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
-  // state can be: 'idle', 'investigating', 'thinking', 'critical', 'safe'
-  
+  // state: 'idle' | 'investigating' | 'thinking' | 'critical' | 'suspicious' | 'safe'
+
   const getColors = () => {
     switch (state) {
       case 'critical':
@@ -21,11 +28,43 @@ const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
     }
   };
 
-  const colors = getColors();
-  const isBusy = state === 'investigating' || state === 'thinking';
+  const colors     = getColors();
+  const isBusy     = state === 'investigating' || state === 'thinking';
+  // Fix 5: when beam is active ('thinking'), suppress pupil drift so we don't
+  // have 4 simultaneous animations competing on a tiny icon.
+  const isThinking = state === 'thinking';
 
   return (
-    <div className={`relative flex items-center justify-center ${className}`}>
+    <div className={`relative flex items-center justify-center ${className} ${isBusy ? 'drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]' : ''}`}>
+      
+      {/* Fix 2: Split scan-line — left and right segments with a gap
+           spanning the eye's bounding box (≈38%–62% of the container).
+           The gap means the line never visually bisects the pupil.        */}
+      <AnimatePresence>
+        {isBusy && (
+          <>
+            <motion.div
+              key="scan-left"
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: [-60, 60, -60], opacity: [0.45, 0.9, 0.45] }}
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+              className="absolute left-0 h-[2px] bg-cyan-300 shadow-[0_0_10px_#22d3ee] z-20 pointer-events-none"
+              style={{ top: '50%', right: '62%' }}
+            />
+            <motion.div
+              key="scan-right"
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: [-60, 60, -60], opacity: [0.45, 0.9, 0.45] }}
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+              className="absolute right-0 h-[2px] bg-cyan-300 shadow-[0_0_10px_#22d3ee] z-20 pointer-events-none"
+              style={{ top: '50%', left: '62%' }}
+            />
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Background Pulse (Idle) */}
       {state === 'idle' && (
         <motion.div
@@ -41,7 +80,7 @@ const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
         viewBox="0 0 100 100" 
         className="absolute inset-0 w-full h-full drop-shadow-md"
         animate={{ rotate: isBusy ? 360 : 0 }}
-        transition={{ duration: isBusy ? 3 : 20, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: isBusy ? 10 : 0, repeat: isBusy ? Infinity : 0, ease: "linear" }}
         style={{ color: colors.ring }}
       >
         <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" />
@@ -99,40 +138,55 @@ const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
           style={{ filter: `drop-shadow(0 0 8px ${colors.glow})` }}
         />
         
-        {/* Iris */}
+        {/* Fix 3: Iris — radius change now driven by Framer Motion scale
+             instead of a bare r-prop swap React cannot tween.
+             Spring stiffness:120, damping:18 → ~450ms ease-out, no overshoot. */}
         <motion.circle
           cx="50"
           cy="50"
-          r={isBusy ? 20 : 15}
+          r={IRIS_IDLE_R}
           fill="none"
           stroke={colors.primary}
           strokeWidth="1.5"
-          strokeDasharray={isBusy ? "2 2" : "none"}
+          strokeDasharray={isBusy ? '2 2' : 'none'}
           animate={{
-            scale: state === 'critical' ? 1.2 : 1,
+            scale:   isBusy ? IRIS_SCALE_BUSY : (state === 'critical' ? 1.2 : 1),
             opacity: state === 'idle' ? [0.6, 1, 0.6] : 1,
-            rotate: isBusy ? -360 : 0
+            rotate:  isBusy ? -360 : 0,
           }}
           transition={{
-            opacity: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-            scale: { duration: 0.3 },
-            rotate: { duration: 4, repeat: Infinity, ease: "linear" }
+            scale:   { type: 'spring', stiffness: 120, damping: 18 },
+            opacity: { duration: 3, repeat: Infinity, ease: 'easeInOut' },
+            rotate:  { duration: 4, repeat: Infinity, ease: 'linear' },
           }}
-          style={{ filter: `drop-shadow(0 0 10px ${colors.glow})`, transformOrigin: '50px 50px' }}
+          style={{
+            filter: `drop-shadow(0 0 10px ${colors.glow})`,
+            transformOrigin: '50px 50px',
+          }}
         />
 
-        {/* Pupil */}
+        {/* Fix 5: Pupil — when 'thinking' the beam is the dominant motion;
+             suppress x-drift entirely and soften scale to [1,1.05,1] so only
+             2 animations run (iris rotate + beam sweep) instead of 4.          */}
         <motion.circle
           cx="50"
           cy="50"
           r={isBusy ? 4 : 6}
           fill={colors.primary}
           animate={{
-            scale: state === 'critical' ? 0.8 : 1,
-            x: state === 'thinking' ? [-5, 5, -5] : 0
+            scale:   isBusy
+                       ? (isThinking ? [1, 1.05, 1] : [1, 1.2, 1])
+                       : (state === 'critical' ? 0.8 : 1),
+            opacity: isBusy ? [0.8, 1, 0.8] : 1,
+            x:       0,   // drift disabled; beam sweep is the motion signal
           }}
           transition={{
-            x: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+            scale:   {
+              duration: isThinking ? 2.0 : 1,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            },
+            opacity: { duration: 1, repeat: Infinity, ease: 'easeInOut' },
           }}
           style={{ filter: `drop-shadow(0 0 15px ${colors.glow})` }}
         />

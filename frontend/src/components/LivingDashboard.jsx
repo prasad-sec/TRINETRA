@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import InvestigationWorkspace from './InvestigationWorkspace';
 import { motion } from 'framer-motion';
 import { Eye } from 'lucide-react';
 const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
   const [aiState, setAiState] = useState('idle'); // idle, thinking, alert
+  const [reportLanguage] = useState('English');
 
   const handleWorkspaceStateChange = (state) => {
     if (state === 'investigating') setAiState('thinking');
@@ -91,8 +92,8 @@ const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-[1.5px] border-r-[1.5px] border-cyan-500/20 rounded-br-2xl"></div>
           </div>
 
-          <div className="flex-1 bg-theme-surface/50 backdrop-blur-md border border-theme-border rounded-lg sm:rounded-2xl flex flex-col relative shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-            <InvestigationWorkspace onStateChange={handleWorkspaceStateChange} isDashboardActive={isDashboardActive} />
+          <div className="flex-1 bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl flex flex-col relative">
+            <InvestigationWorkspace onStateChange={handleWorkspaceStateChange} isDashboardActive={isDashboardActive} reportLanguage={reportLanguage} />
           </div>
         </div>
       </motion.main>

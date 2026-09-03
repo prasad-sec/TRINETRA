@@ -56,7 +56,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
     }, duration - 800);
 
     return () => clearTimeout(endTimeout);
-  }, [containerControls, onComplete, isFirstLaunch]);
+  }, [containerControls, onComplete, isFirstLaunch, logs.length, onTransitionStart]);
 
   if (!isFirstLaunch) {
     // Quick 1-second launch

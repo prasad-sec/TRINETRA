@@ -35,21 +35,3 @@ html, body, #root {
     scrollbar-width: none;
 }
 
-@keyframes dossierReveal {
-  0% {
-    opacity: 0;
-    transform: perspective(1000px) rotateX(4deg) translateY(14px) scale(0.98);
-    filter: blur(2px);
-  }
-  100% {
-    opacity: 1;
-    transform: perspective(1000px) rotateX(0deg) translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-.report-dossier-entry {
-  animation: dossierReveal 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity, filter;
-  opacity: 0;
-}

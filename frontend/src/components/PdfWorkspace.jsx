@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-export default function PdfWorkspace({ onAnalysisComplete, setEyeStatus, setIsInvestigating }) {
+export default function PdfWorkspace({ onAnalysisComplete, setIsInvestigating, targetLanguage }) {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +32,9 @@ export default function PdfWorkspace({ onAnalysisComplete, setEyeStatus, setIsIn
 
     const formData = new FormData();
     formData.append('file', pdfFile);
+    if (targetLanguage) {
+      formData.append('target_language', targetLanguage);
+    }
 
     try {
       // NOTE: Make sure the URL matches your backend endpoint
@@ -116,11 +119,11 @@ export default function PdfWorkspace({ onAnalysisComplete, setEyeStatus, setIsIn
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={!file && !isLoading ? handleBrowseClick : undefined}
-          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 ${
+          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-300 ${
             isDragging 
               ? 'border-cyan-400 bg-cyan-950/20 scale-[1.01]' 
-              : 'border-slate-700 bg-slate-900/40'
-          } ${!file && !isLoading ? 'cursor-pointer hover:border-slate-500' : ''} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              : 'border-cyan-500/20 hover:border-cyan-500/40 bg-zinc-950/70 backdrop-blur-md shadow-xl shadow-cyan-950/30'
+          } ${!file && !isLoading ? 'cursor-pointer' : ''} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {file ? (
             <div className="flex flex-col items-center justify-center space-y-4">
