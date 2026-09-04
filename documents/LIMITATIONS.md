@@ -1,0 +1,9 @@
+# Analytical Boundaries & Technical Limitations
+
+TRINETRA is a powerful AI-assisted forensics platform, but it operates within defined technical boundaries. Security analysts must understand these limitations to prevent over-reliance and ensure accurate threat assessments.
+
+- **A SAFE verdict does not prove an artifact is completely benign.** TRINETRA evaluates based on known heuristics, text analysis, and current threat intelligence. A highly sophisticated, novel zero-day attack or an obfuscated payload designed to bypass static analysis might yield a "SAFE" verdict. 
+- **AI-generated image detection is probabilistic, not definitive.** While TRINETRA utilizes C2PA manifests, Error Level Analysis (ELA), and advanced Vision models, detecting synthetic media is an arms race. Subtle deepfakes may bypass detection, and heavily compressed authentic images may occasionally trigger false positives.
+- **Metadata absence does not inherently prove image manipulation.** EXIF data and cryptographic manifests are routinely stripped by social media platforms and messaging applications for privacy and bandwidth reasons. The lack of this data should be noted, but it is not a smoking gun for forgery.
+- **URL heuristics cannot identify every malicious domain.** Typosquatting checks (like Levenshtein distance) rely on comparing domains against established high-value indexes. If a threat actor uses a completely unrelated, newly registered domain without impersonating a known brand, it may bypass typosquatting detection.
+- **AI reasoning is an analytical aid, not a replacement for human investigation.** The Large Language Models (LLMs) powering TRINETRA are designed to correlate indicators and synthesize reports rapidly. However, they can hallucinate or misinterpret ambiguous data. The final decision to block, purge, or ignore a threat must always rest with a qualified human analyst.

@@ -3,7 +3,8 @@ load_dotenv()
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -27,9 +28,9 @@ async def limit_upload_size(request: Request, call_next):
     max_size = 10 * 1024 * 1024
     content_length = request.headers.get("content-length")
     if content_length and int(content_length) > max_size:
-        raise HTTPException(
+        return JSONResponse(
             status_code=413, 
-            detail="Payload too large. Maximum supported file size is 10MB."
+            content={"detail": "Payload too large. Maximum supported file size is 10MB."}
         )
     return await call_next(request)
 

@@ -111,3 +111,22 @@ When digital artifact payloads are uploaded via the React frontend, the FastAPI 
    ```bash
    npm run dev
    ```
+
+## Production Deployment
+
+TRINETRA is containerized and optimized for edge deployment, separating the tactical React frontend from the heavy FastAPI execution layer.
+
+### Frontend Deployment (Vercel)
+The presentation layer is built with Vite and React, making it ideal for Vercel's edge network.
+1. Push your frontend code to a GitHub repository.
+2. Import the repository into a new Vercel project.
+3. Vercel will automatically detect the Vite framework and apply the correct build command (`npm run build`) and output directory (`dist`).
+4. Ensure you set your production backend API URL in the Vercel environment variables (e.g., `VITE_API_URL=https://your-railway-backend-url.com`).
+
+### Backend Deployment (Railway / Render via Docker)
+The application layer is fully containerized to ensure cross-environment determinism and execution safety.
+1. Connect your backend GitHub repository to a new Railway or Render project.
+2. The cloud platform will automatically detect the `Dockerfile`, install the OS-level dependencies (like Tesseract OCR and libgl1), and boot the Uvicorn worker cluster.
+3. Add the following environment variables in your cloud dashboard:
+   - `GROQ_API_KEY`: Your Groq LPU™ API key.
+   - `ENVIRONMENT`: Set to `production` to activate SlowAPI rate-limiting.
