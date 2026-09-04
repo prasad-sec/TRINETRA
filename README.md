@@ -130,3 +130,21 @@ The application layer is fully containerized to ensure cross-environment determi
 3. Add the following environment variables in your cloud dashboard:
    - `GROQ_API_KEY`: Your Groq LPU™ API key.
    - `ENVIRONMENT`: Set to `production` to activate SlowAPI rate-limiting.
+
+## Attribution
+
+TRINETRA is an original cybersecurity project developed by **Prasad Prashant Dabhekar**.
+
+This project is released under the MIT License. You are free to use, modify,
+and distribute the software in accordance with the license terms.
+
+If you use substantial portions of the TRINETRA source code or build a
+derivative project based on TRINETRA, please provide clear attribution to
+the original project and author:
+
+> TRINETRA — developed by Prasad Prashant Dabhekar
+
+Please retain the original copyright and license notices when redistributing
+substantial portions of the source code.
+
+**GitHub Repository**: [https://github.com/prasad-sec/TRINETRA](https://github.com/prasad-sec/TRINETRA)
