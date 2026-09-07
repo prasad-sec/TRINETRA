@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, Info, CheckCircle } from 'lucide-react';
 
-export default function EmailWorkspace({ setReportData, setIsInvestigating, targetLanguage }) {
+export default function EmailWorkspace({ setReportData, setIsInvestigating, targetLanguage = 'English' }) {
   const [emailFile, setEmailFile] = useState(null);
   const [emailText, setEmailText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +21,7 @@ export default function EmailWorkspace({ setReportData, setIsInvestigating, targ
       formData.append('content', emailText);
     }
     
-    if (targetLanguage) {
+    if (targetLanguage !== 'English') {
       formData.append('target_language', targetLanguage);
     }
 
@@ -117,7 +117,7 @@ export default function EmailWorkspace({ setReportData, setIsInvestigating, targ
         
         <input 
           type="file" 
-          accept=".eml,.msg" 
+          accept=".eml, .msg, application/vnd.ms-outlook" 
           className="hidden" 
           ref={fileInputRef}
           onChange={handleFileUpload}

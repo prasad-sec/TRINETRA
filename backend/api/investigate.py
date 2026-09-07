@@ -14,6 +14,17 @@ from functools import lru_cache
 import pymupdf
 import fitz  # PyMuPDF
 
+import importlib.util
+try:
+    _filter_path = os.path.join(os.path.dirname(__file__), "..", "utils", "privacy_filter.py")
+    _spec = importlib.util.spec_from_file_location("privacy_filter", _filter_path)
+    _privacy_filter = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_privacy_filter)
+    mask_pii_for_forensics = _privacy_filter.mask_pii_for_forensics
+except Exception as e:
+    logger.error(f"Failed to load privacy_filter: {e}")
+    def mask_pii_for_forensics(text): return text
+
 @lru_cache(maxsize=1024)
 def get_ip_geolocation(ip_address: str) -> str:
     """Fetches IP geolocation and ISP for advanced threat tracking."""
@@ -230,118 +241,145 @@ async def analyze_email(
                 raise HTTPException(status_code=400, detail="File is required when type is 'upload'")
                 
             file_bytes = await file.read()
-            msg = email.message_from_bytes(file_bytes, policy=policy.default)
             
-            metadata["subject"] = msg.get("Subject")
-            metadata["from"] = msg.get("From")
-            metadata["to"] = msg.get("To")
-            metadata["date"] = msg.get("Date")
-            metadata["return_path"] = msg.get("Return-Path")
-            metadata["auth_results"] = msg.get("Authentication-Results")
-            metadata["received_spf"] = msg.get("Received-SPF")
-            headers_available = True
-            
-            received_headers = msg.get_all('Received')
-            
-            if received_headers:
-                ip_pattern = re.compile(r'\b(?:\d{1,3}\.){3}\d{1,3}\b') 
+            if file.filename and file.filename.lower().endswith('.msg'):
+                import tempfile
+                import os
+                from utils import parse_msg_file
                 
-                for header in received_headers:
-                    ips_found = ip_pattern.findall(header)
-                    for ip in ips_found:
-                        geo_location = get_ip_geolocation(ip)
-                        if geo_location != "Invalid_IP" and not any(ip in hop for hop in routing_hops):
-                            routing_hops.append(f"Hop IP: {ip} | Location: {geo_location}")
-            
-            if routing_hops:
-                routing_context = "\n".join(routing_hops[:5])
-            
-            plain_text = ""
-            html_text = ""
-            max_attachments = 5
-            attachments_scanned = 0
-            extracted_images = []
-            
-            for part in msg.walk():
-                if part.get_content_maintype() == 'multipart':
-                    continue
-                if attachments_scanned >= max_attachments:
-                    break
-                content_type = part.get_content_type()
-                if content_type == 'text/plain':
-                    payload = part.get_content()
-                    if payload:
-                        plain_text += str(payload) + "\n"
-                elif content_type == 'text/html':
-                    payload = part.get_content()
-                    if payload:
-                        html_text += str(payload) + "\n"
-                elif content_type == 'application/pdf':
-                    pdf_bytes = part.get_payload(decode=True)
-                    if pdf_bytes:
-                        try:
-                            pdf_doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-                            for page_index in range(len(pdf_doc)):
-                                page = pdf_doc[page_index]
-                                attached_pdf_text += page.get_text()
-                                for link in page.get_links():
-                                    if link.get("uri"):
-                                        attached_pdf_urls.append(link.get("uri"))
-                                        
-                                image_list = page.get_images(full=True)
-                                for img in image_list:
-                                    xref = img[0]
-                                    base_image = pdf_doc.extract_image(xref)
-                                    image_bytes = base_image["image"]
-                                    qr_payloads = extract_qr_from_image_bytes(image_bytes)
-                                    if qr_payloads:
-                                        attached_pdf_text += f"\n[HIDDEN QR CODE DETECTED IN PDF]: {' '.join(qr_payloads)}"
-                        except Exception as e:
-                            print(f"Failed to parse PDF attachment: {e}")
-                elif part.get_content_maintype() == 'image':
-                    try:
-                        img_bytes = part.get_payload(decode=True)
-                        img_filename = part.get_filename() or "inline_image"
-                        try:
-                            extracted_images.append({
-                                "filename": img_filename,
-                                "data": base64.b64encode(img_bytes).decode('utf-8'),
-                                "content_type": part.get_content_type()
-                            })
-                        except Exception as enc_e:
-                            print(f"Failed to encode extracted image: {enc_e}")
-                        
-                        qr_data = extract_qr_from_image_bytes(img_bytes)
-                        fft_data = compute_fft_anomaly(img_bytes)
-                        ela_data = compute_ela_score(img_bytes)
-
-                        email_child_reports.append(f"[Attached Image {attachments_scanned+1}]: QR Context: {qr_data} | FFT: {fft_data} | ELA: {ela_data}")
-                        attachments_scanned += 1
-
-                        # 1. New QR Payload Extraction for Quishing (appending to body)
-                        qr_payloads = qr_data
-                        if qr_payloads:
-                            qr_alert = f"\n[HIDDEN QR CODE DETECTED IN EMAIL ATTACHMENT]: {' '.join(qr_payloads)}"
-                            plain_text += qr_alert
-                            html_text += qr_alert
-    
-                        # 2. Original OCR & Image URL processing
-                        nparr = np.frombuffer(img_bytes, np.uint8)
-                        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                        if img is not None:
-                            ocr_text = pytesseract.image_to_string(img).strip()
-                            if ocr_text:
-                                attached_image_text.append(ocr_text)
-    
-                            detector = cv2.QRCodeDetector()
-                            data, bbox, straight_qrcode = detector.detectAndDecode(img)
-                            if data:
-                                attached_image_urls.append(data)
-    
-                    except Exception as e:
-                        print(f"Error processing image attachment: {e}")
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".msg") as tmp_file:
+                    tmp_file.write(file_bytes)
+                    tmp_path = tmp_file.name
                     
-            body = plain_text if plain_text else html_text
+                try:
+                    msg_data = parse_msg_file(tmp_path)
+                finally:
+                    os.remove(tmp_path)
+                    
+                metadata["subject"] = msg_data.get("subject")
+                metadata["from"] = msg_data.get("sender")
+                metadata["date"] = msg_data.get("date")
+                body = msg_data.get("body", "")
+                headers_available = True
+                
+                if msg_data.get("attachments"):
+                    attachments_list = "\n".join(msg_data["attachments"])
+                    body += f"\n\n[ATTACHMENTS LISTED IN MSG FILE]:\n{attachments_list}"
+                    
+                extracted_images = []
+            else:
+                msg = email.message_from_bytes(file_bytes, policy=policy.default)
+                
+                metadata["subject"] = msg.get("Subject")
+                metadata["from"] = msg.get("From")
+                metadata["to"] = msg.get("To")
+                metadata["date"] = msg.get("Date")
+                metadata["return_path"] = msg.get("Return-Path")
+                metadata["auth_results"] = msg.get("Authentication-Results")
+                metadata["received_spf"] = msg.get("Received-SPF")
+                headers_available = True
+                
+                received_headers = msg.get_all('Received')
+                
+                if received_headers:
+                    ip_pattern = re.compile(r'\b(?:\d{1,3}\.){3}\d{1,3}\b') 
+                    
+                    for header in received_headers:
+                        ips_found = ip_pattern.findall(header)
+                        for ip in ips_found:
+                            geo_location = get_ip_geolocation(ip)
+                            if geo_location != "Invalid_IP" and not any(ip in hop for hop in routing_hops):
+                                routing_hops.append(f"Hop IP: {ip} | Location: {geo_location}")
+                
+                if routing_hops:
+                    routing_context = "\n".join(routing_hops[:5])
+                
+                plain_text = ""
+                html_text = ""
+                max_attachments = 5
+                attachments_scanned = 0
+                extracted_images = []
+                
+                for part in msg.walk():
+                    if part.get_content_maintype() == 'multipart':
+                        continue
+                    if attachments_scanned >= max_attachments:
+                        break
+                    content_type = part.get_content_type()
+                    if content_type == 'text/plain':
+                        payload = part.get_content()
+                        if payload:
+                            plain_text += str(payload) + "\n"
+                    elif content_type == 'text/html':
+                        payload = part.get_content()
+                        if payload:
+                            html_text += str(payload) + "\n"
+                    elif content_type == 'application/pdf':
+                        pdf_bytes = part.get_payload(decode=True)
+                        if pdf_bytes:
+                            try:
+                                pdf_doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+                                for page_index in range(len(pdf_doc)):
+                                    page = pdf_doc[page_index]
+                                    attached_pdf_text += page.get_text()
+                                    for link in page.get_links():
+                                        if link.get("uri"):
+                                            attached_pdf_urls.append(link.get("uri"))
+                                            
+                                    image_list = page.get_images(full=True)
+                                    for img in image_list:
+                                        xref = img[0]
+                                        base_image = pdf_doc.extract_image(xref)
+                                        image_bytes = base_image["image"]
+                                        qr_payloads = extract_qr_from_image_bytes(image_bytes)
+                                        if qr_payloads:
+                                            attached_pdf_text += f"\n[HIDDEN QR CODE DETECTED IN PDF]: {' '.join(qr_payloads)}"
+                            except Exception as e:
+                                print(f"Failed to parse PDF attachment: {e}")
+                    elif part.get_content_maintype() == 'image':
+                        try:
+                            img_bytes = part.get_payload(decode=True)
+                            img_filename = part.get_filename() or "inline_image"
+                            try:
+                                extracted_images.append({
+                                    "filename": img_filename,
+                                    "data": base64.b64encode(img_bytes).decode('utf-8'),
+                                    "content_type": part.get_content_type()
+                                })
+                            except Exception as enc_e:
+                                print(f"Failed to encode extracted image: {enc_e}")
+                            
+                            qr_data = extract_qr_from_image_bytes(img_bytes)
+                            fft_data = compute_fft_anomaly(img_bytes)
+                            ela_data = compute_ela_score(img_bytes)
+    
+                            email_child_reports.append(f"[Attached Image {attachments_scanned+1}]: QR Context: {qr_data} | FFT: {fft_data} | ELA: {ela_data}")
+                            attachments_scanned += 1
+    
+                            # 1. New QR Payload Extraction for Quishing (appending to body)
+                            qr_payloads = qr_data
+                            if qr_payloads:
+                                qr_alert = f"\n[HIDDEN QR CODE DETECTED IN EMAIL ATTACHMENT]: {' '.join(qr_payloads)}"
+                                plain_text += qr_alert
+                                html_text += qr_alert
+        
+                            # 2. Original OCR & Image URL processing
+                            nparr = np.frombuffer(img_bytes, np.uint8)
+                            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                            if img is not None:
+                                ocr_text = pytesseract.image_to_string(img).strip()
+                                if ocr_text:
+                                    attached_image_text.append(ocr_text)
+        
+                                detector = cv2.QRCodeDetector()
+                                data, bbox, straight_qrcode = detector.detectAndDecode(img)
+                                if data:
+                                    attached_image_urls.append(data)
+        
+                        except Exception as e:
+                            print(f"Error processing image attachment: {e}")
+                        
+                body = plain_text if plain_text else html_text
                         
         elif type == 'text':
             if not content:
@@ -361,13 +399,13 @@ async def analyze_email(
         payload_dict = {
             "headers_available": headers_available,
             "metadata": metadata,
-            "email_body": body,
+            "email_body": mask_pii_for_forensics(body),
             "email_urls": extracted_urls,
             "has_pdf_attachment": bool(attached_pdf_text),
-            "attached_pdf_text": attached_pdf_text[:2000],
+            "attached_pdf_text": mask_pii_for_forensics(attached_pdf_text[:2000]),
             "attached_pdf_urls": attached_pdf_urls,
             "has_image_attachment": bool(attached_image_text or attached_image_urls),
-            "attached_image_text": "\n".join(attached_image_text)[:2000],
+            "attached_image_text": mask_pii_for_forensics("\n".join(attached_image_text)[:2000]),
             "attached_image_urls": attached_image_urls
         }
     
@@ -566,7 +604,7 @@ async def investigate_pdf(request: Request, file: UploadFile = File(...), target
         pdf_text = extracted_text
             
         payload_dict = {
-            "pdf_text": pdf_text[:4000],
+            "pdf_text": mask_pii_for_forensics(pdf_text[:4000]),
             "pdf_urls": list(set(pdf_urls))
         }
         
@@ -924,6 +962,7 @@ async def investigate_image_endpoint(request: Request, file: UploadFile = File(.
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if img is not None:
             ocr_text = pytesseract.image_to_string(img).strip()
+            ocr_text = mask_pii_for_forensics(ocr_text)
             qr_payloads = extract_qr_from_image_bytes(file_bytes)
             if qr_payloads:
                 extracted_payload = ", ".join(qr_payloads)

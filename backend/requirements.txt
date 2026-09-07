@@ -12,3 +12,4 @@ duckduckgo-search
 slowapi
 pytest
 httpx
+extract-msg

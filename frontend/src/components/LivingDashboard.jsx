@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import InvestigationWorkspace from './InvestigationWorkspace';
+import PrivacyShieldModal from './PrivacyShieldModal';
 import { motion } from 'framer-motion';
 import { Eye } from 'lucide-react';
 const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
@@ -65,12 +66,7 @@ const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
             </div>
           </div>
           <div className="h-6 w-px bg-theme-border"></div>
-          <div className="flex flex-col items-center md:items-end gap-1">
-            <span className="text-slate-500">Status</span>
-            <span className={aiState === 'thinking' ? 'text-cyan-400' : aiState === 'alert' ? 'text-amber-400' : 'text-slate-300'}>
-              {getInvestigationStatus()}
-            </span>
-          </div>
+          <PrivacyShieldModal />
         </div>
       </motion.header>
 

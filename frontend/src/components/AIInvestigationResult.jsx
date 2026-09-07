@@ -103,7 +103,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
       <div className="flex-1 overflow-y-auto w-full pb-8 pr-2 scrollbar-hide space-y-8">
         
         {/* ================= 2. Executive Summary ================= */}
-        <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6">
+        <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6">
           <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-3 flex items-center gap-2">
             <Activity className="w-4 h-4 text-cyan-500"/> Executive Summary
           </h2>
@@ -113,7 +113,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
         </div>
 
         {/* ================= METRICS GRID (1, 3, 4, Media) ================= */}
-        <div className="grid grid-cols-3 gap-4 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
           
           {/* ================= 1. Investigation Verdict ================= */}
           <div className={`flex flex-col bg-zinc-950/70 backdrop-blur-md border ${activeStyle.border} hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6`}>
@@ -122,12 +122,12 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
               <ShieldAlert className="w-5 h-5" style={{ color: activeStyle.icon }} />
             </div>
             <div className="flex-1 flex flex-col justify-center items-center w-full px-3">
-              <div className={`font-mono text-2xl font-bold mb-2 ${activeStyle.text} tracking-wide break-words text-center`}>{activeStyle.label}</div>
+              <div className={`font-mono text-2xl sm:text-3xl md:text-4xl font-bold mb-2 ${activeStyle.text} tracking-wide overflow-hidden text-ellipsis whitespace-nowrap text-center w-full`}>{activeStyle.label}</div>
             </div>
           </div>
 
           {/* ================= 3. Threat Assessment ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 flex flex-col">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4 shrink-0">
               <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Threat Assessment</span>
               <Crosshair className="w-5 h-5 text-cyan-500" />
@@ -142,7 +142,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
           
         {/* ================= 4. Classification Confidence ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 flex flex-col relative overflow-hidden">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col relative overflow-hidden">
              <div className="flex items-center justify-between mb-4 shrink-0 z-10">
               <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Confidence</span>
               <Search className="w-5 h-5 text-cyan-500" />
@@ -219,7 +219,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         {/* ================= 5. Key Findings ================= */}
         {keyFindings && keyFindings.length > 0 && (
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500"/> Key Findings
             </h2>
@@ -231,9 +231,9 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           {/* ================= 6. Evidence Collected ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 flex flex-col">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2">
               <Database className="w-4 h-4 text-cyan-500"/> Evidence Collected
             </h2>
@@ -272,7 +272,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
 
           {/* ================= 7. Indicators of Compromise (IoCs) ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 flex flex-col">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-rose-400"/> Indicators of Compromise
             </h2>
@@ -307,7 +307,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         {/* ================= 8. AI Analyst Reasoning ================= */}
         {aiReasoning ? (
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 md:p-8 relative overflow-hidden">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 md:p-8 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-zinc-900 via-cyan-500 to-zinc-900 opacity-80 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2 shrink-0">
                <Cpu className="w-4 h-4" /> AI Investigation Reasoning
@@ -317,14 +317,14 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
             </div>
           </div>
         ) : (
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors rounded-xl shadow-xl shadow-cyan-950/30 p-6 flex items-center justify-center">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors rounded-xl shadow-xl shadow-cyan-950/30 p-4 sm:p-6 flex items-center justify-center">
             <span className="font-mono text-sm italic text-zinc-600">No AI analyst reasoning provided.</span>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           {/* ================= 9. Recommended Actions ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 flex flex-col">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2 shrink-0">
               <CheckCircle className="w-4 h-4 text-emerald-500"/> Recommended Actions
             </h2>
@@ -342,7 +342,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
           
           {/* ================= 10. Investigation Conclusion ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 flex flex-col">
+          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2 shrink-0">
               <FileText className="w-4 h-4 text-cyan-500"/> Investigation Conclusion
             </h2>

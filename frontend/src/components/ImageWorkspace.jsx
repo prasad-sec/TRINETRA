@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Upload, FileImage, ShieldAlert, RefreshCw, X } from "lucide-react";
 
-export default function ImageWorkspace({ onResult, setIsInvestigating, setInvestigationState, targetLanguage }) {
+export default function ImageWorkspace({ onResult, setIsInvestigating, setInvestigationState, targetLanguage = 'English' }) {
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +50,7 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
 
         const formData = new FormData();
         formData.append("file", file);
-        if (targetLanguage) {
+        if (targetLanguage !== 'English') {
             formData.append("target_language", targetLanguage);
         }
 

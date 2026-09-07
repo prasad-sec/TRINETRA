@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-export default function PdfWorkspace({ onAnalysisComplete, setIsInvestigating, targetLanguage }) {
+export default function PdfWorkspace({ targetLanguage = 'English', onAnalysisComplete, setIsInvestigating, setInvestigationState }) {
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +32,7 @@ export default function PdfWorkspace({ onAnalysisComplete, setIsInvestigating, t
 
     const formData = new FormData();
     formData.append('file', pdfFile);
-    if (targetLanguage) {
+    if (targetLanguage !== 'English') {
       formData.append('target_language', targetLanguage);
     }
 

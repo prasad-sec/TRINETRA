@@ -48,7 +48,8 @@ When digital artifact payloads are uploaded via the React frontend, the FastAPI 
 
 ## Key Features
 - **URL Intelligence & Typosquatting Detection**: Extracts domains, TLD risk scores, redirect chains, and performs Levenshtein distance typosquatting checks against high-value brand indexes.
-- **Email Forensics & Social Engineering Evaluation**: Parses `.eml` files to extract routing headers, verify SPF/DKIM/DMARC alignment, inspect all embedded and attached images (passing them simultaneously to Vision AI), and identify urgency-based linguistic manipulation.
+- **Email Forensics & Social Engineering Evaluation**: Parses `.eml` and Microsoft Outlook `.msg` files to extract routing headers, verify SPF/DKIM/DMARC alignment, inspect all embedded and attached images (passing them simultaneously to Vision AI), and identify urgency-based linguistic manipulation.
+- **Automated PII Masking (Data Privacy)**: A zero-trust local privacy interceptor that is permanently enforced by default. It proactively redacts sensitive Personally Identifiable Information (PII) such as Credit Card numbers (validated via the Luhn algorithm), Aadhaar numbers, and international mobile numbers from unstructured text (emails, OCR) locally before any data leaves the backend for AI inference, while strictly preserving crucial Indicators of Compromise (IOCs) like URLs, IPs, and email addresses.
 - **PDF Stream Inspection & Link Unmasking**: Analyzes PDF structures directly in memory using PyMuPDF (`fitz`) to extract embedded hyperlinks, annotations, and invoice text while bypassing malicious JavaScript execution layers.
 - **QR Code (Quishing) Analysis with Multi-Stage Pipeline**: Utilizes local OpenCV and `zxing-cpp` (with dark-mode bitwise-NOT matrix inversion), backed by a Groq Vision AI fallback (`Llama-3.2-11b-vision-preview`) for heavily stylized or logo-overlaid payment matrices (e.g., UPI/GPay codes). AI threat reasoning translates findings into accessible, non-technical guidance while recognizing benign transaction flows.
 - **Screenshot Vision OCR & Synthetic Media Engine**: Extracts text locally via `pytesseract`, performs live keyless OSINT queries via DuckDuckGo, and evaluates visual streams using cryptographic C2PA manifests, EXIF metadata, Error Level Analysis (ELA) scores, and 2D Fast Fourier Transform (FFT) spectrum analysis to detect AI-generated synthetic artifacts and deepfake markers prior to LLM threat synthesis.
@@ -60,7 +61,7 @@ When digital artifact payloads are uploaded via the React frontend, the FastAPI 
 ## Tech Stack
 - **Frontend**: React, Tailwind CSS, Lucide Icons
 - **Backend**: Python 3.10+, FastAPI, Uvicorn
-- **Extraction Libraries**: `PyMuPDF` (fitz), `zxing-cpp`, `OpenCV` (cv2), `pytesseract`, `c2pa-python`, `Pillow`, `duckduckgo-search`, native Python `email` module
+- **Extraction Libraries**: `PyMuPDF` (fitz), `zxing-cpp`, `OpenCV` (cv2), `pytesseract`, `c2pa-python`, `Pillow`, `duckduckgo-search`, `extract-msg`, native Python `email` module
 - **AI Integration**: Groq API (Llama-3.3-70b-versatile, Llama-3.2-11b-vision-preview, Qwen 3.6 27B)
 
 ## Prerequisites

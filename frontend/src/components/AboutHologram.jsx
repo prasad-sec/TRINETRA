@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Link, Mail, FileText, QrCode, Image as ImageIcon, Cpu, Zap, Eye, ChevronLeft, Layers, ShieldAlert, BrainCircuit } from 'lucide-react';
+import { X, Link, Mail, FileText, QrCode, Image as ImageIcon, Cpu, Zap, Eye, ChevronLeft, Layers, ShieldAlert, ShieldCheck, BrainCircuit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ── Deep-dive content for each vector ──────────────────────────────────────────
@@ -65,6 +65,17 @@ const VECTOR_DEEP_DIVE = {
     ],
     promptStrategy: 'A two-stage Groq pipeline runs: Stage 1 (Vision LLM) describes visual context and AI-generation signals; Stage 2 (text LLM) fuses OCR, QR payloads, and visual context to produce a calibrated threat verdict.',
   },
+  'Local Privacy Shield': {
+    stack: ['Python re (RegEx) + Luhn Checksum', 'Strict boundary negative lookbehinds', 'Pre-inference local interceptor'],
+    metrics: [
+      'Luhn algorithm verification for 13-19 digit credit cards',
+      'Strict local formatting detection for Aadhaar IDs',
+      'International and domestic phone number scrubbing',
+      'Preservation layer for domain names and IP addresses',
+      'Zero-trust deterministic redaction before LLM inference',
+    ],
+    promptStrategy: 'The Privacy Shield operates as a strict zero-trust middleware. It guarantees that all detected PII is deterministically scrambled or redacted locally. The AI engine only ever receives sanitized "[REDACTED]" tags, ensuring absolute data sovereignty.',
+  },
 };
 
 const VECTORS = [
@@ -98,6 +109,12 @@ const VECTORS = [
     description: 'Groq Vision OCR, AI-generated synthetic media detection & screenshot context analysis.',
     color: 'amber',
   },
+  {
+    icon: ShieldCheck,
+    label: 'Local Privacy Shield',
+    description: 'Deterministic PII masking (Cards, Phones, IDs) executed locally prior to AI inference.',
+    color: 'rose',
+  },
 ];
 
 const COLOR_MAP = {
@@ -106,6 +123,7 @@ const COLOR_MAP = {
   violet:  { border: 'border-violet-500/25',  icon: 'text-violet-400',  bg: 'bg-violet-500/15',  hover: 'hover:border-violet-500/60 hover:shadow-[0_0_25px_rgba(139,92,246,0.25)] hover:-translate-y-1',  activeBorder: 'border-violet-500/60',  activeShadow: 'shadow-[0_0_25px_rgba(139,92,246,0.3)]'  },
   emerald: { border: 'border-emerald-500/25', icon: 'text-emerald-400', bg: 'bg-emerald-500/15', hover: 'hover:border-emerald-500/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.25)] hover:-translate-y-1', activeBorder: 'border-emerald-500/60', activeShadow: 'shadow-[0_0_25px_rgba(16,185,129,0.3)]' },
   amber:   { border: 'border-amber-500/25',   icon: 'text-amber-400',   bg: 'bg-amber-500/15',   hover: 'hover:border-amber-500/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.25)] hover:-translate-y-1',   activeBorder: 'border-amber-500/60',   activeShadow: 'shadow-[0_0_25px_rgba(245,158,11,0.3)]'   },
+  rose:    { border: 'border-rose-500/25',    icon: 'text-rose-400',    bg: 'bg-rose-500/15',    hover: 'hover:border-rose-500/60 hover:shadow-[0_0_25px_rgba(244,63,94,0.25)] hover:-translate-y-1',    activeBorder: 'border-rose-500/60',    activeShadow: 'shadow-[0_0_25px_rgba(244,63,94,0.3)]'    },
 };
 
 const SPECS = [

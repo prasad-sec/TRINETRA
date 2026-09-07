@@ -1,6 +1,21 @@
 import json
 import re
 from typing import Dict, Any
+import extract_msg
+
+def parse_msg_file(file_path):
+    msg = extract_msg.openMsg(file_path)
+    
+    extracted_data = {
+        "sender": msg.sender,
+        "date": msg.date,
+        "subject": msg.subject,
+        "body": msg.body,
+        "attachments": [att.longFilename for att in msg.attachments if att.longFilename]
+    }
+    
+    msg.close()
+    return extracted_data
 
 def parse_llm_json(raw_text: str, fallback_schema: Dict[str, Any]) -> Dict[str, Any]:
     if not raw_text or not raw_text.strip():

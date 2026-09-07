@@ -11,6 +11,7 @@ TRINETRA assumes that any uploaded file or provided URL may be actively hostile.
 
 ## Data Handling
 - **Memory-Mapped Ingestion**: File streams are held in temporary memory buffers for analysis, ensuring artifacts are not permanently written to disk unless explicitly required for a deterministic parser.
+- **Permanent Local PII Masking**: Unstructured text data (such as email bodies and OCR text) is forced through a zero-trust privacy interceptor natively built into the backend. This is permanently enforced and cannot be disabled. Sensitive Personally Identifiable Information (PII)—including Credit Card numbers (validated via Luhn algorithm), mobile numbers, and Aadhaar sequences—is proactively redacted locally. Crucial Indicators of Compromise (IOCs) such as URLs, IPs, and email domains are strictly preserved using negative lookaround heuristics.
 - **Data Minimization**: The platform aggressively strips non-actionable byte-streams before forwarding contextual JSON summaries to Large Language Models. This significantly shrinks the attack surface during LLM inference.
 - **No Telemetry**: No payload content or AI reasoning logs are transmitted to central third-party telemetry servers beyond the requested inference endpoints (e.g., Groq LPU).
 
