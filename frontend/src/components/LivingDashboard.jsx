@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import InvestigationWorkspace from './InvestigationWorkspace';
 import PrivacyShieldModal from './PrivacyShieldModal';
+import AiCoreStatus from './AiCoreStatus';
+import ReasoningGroqModal from './ReasoningGroqModal';
 import { motion } from 'framer-motion';
 import { Eye } from 'lucide-react';
 const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
@@ -53,18 +55,9 @@ const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
             <span className="text-slate-300 group-hover:text-cyan-400 transition-colors">About</span>
           </button>
           <div className="h-6 w-px bg-theme-border"></div>
-          <div className="flex flex-col items-center md:items-end gap-1">
-            <span className="text-slate-500">Reasoning</span>
-            <span className="text-slate-300">Groq</span>
-          </div>
+          <ReasoningGroqModal />
           <div className="h-6 w-px bg-theme-border"></div>
-          <div className="flex flex-col items-center md:items-end gap-1">
-            <span className="text-slate-500">AI Core</span>
-            <div className="flex items-center gap-2">
-              <span className="text-emerald-400">ONLINE</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-            </div>
-          </div>
+          <AiCoreStatus />
           <div className="h-6 w-px bg-theme-border"></div>
           <PrivacyShieldModal />
         </div>

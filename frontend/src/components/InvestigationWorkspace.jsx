@@ -7,6 +7,7 @@ import EmailWorkspace from './EmailWorkspace';
 import PdfWorkspace from './PdfWorkspace';
 import QrWorkspace from './QrWorkspace';
 import ImageWorkspace from './ImageWorkspace';
+import { API_BASE_URL } from '../config/api';
 
 // Fix 4: Sub-status messages shown under the active step label during long waits.
 // Index maps to STAGES index (0-6); steps not listed get the default ticker.
@@ -160,7 +161,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
           ? JSON.stringify({ url: inputUrl, target_language: reportLanguage }) 
           : JSON.stringify({ url: 'dropped_artifact', target_language: reportLanguage });
         
-        const res = await fetch('http://localhost:8000/api/investigate/url', {
+        const res = await fetch(`${API_BASE_URL}/api/investigate/url`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: bodyPayload

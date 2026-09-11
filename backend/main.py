@@ -1,3 +1,4 @@
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -36,10 +37,21 @@ async def limit_upload_size(request: Request, call_next):
 
 app.include_router(investigate_router, prefix="/api/investigate", tags=["investigate"])
 
-# Configure CORS
+# Configure CORS with dynamic environment variable and Vercel preview support
+default_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "http://localhost:5174",
+]
+env_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "").split(",") if origin.strip()]
+cors_origins = list(set(default_origins + env_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Can be restricted to your Vercel frontend URL once deployed
+    allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],

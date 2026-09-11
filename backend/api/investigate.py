@@ -469,8 +469,9 @@ Respond strictly in this JSON format:
                             "content": user_content,
                         }
                     ],
-                    model="llama-3.2-11b-vision-preview",
-                    temperature=0.2
+                    model="qwen/qwen3.8-27b",
+                    temperature=0.2,
+                    max_tokens=1000
                 )
             else:
                 chat_completion = await ai_engine.client.chat.completions.create(
@@ -485,7 +486,8 @@ Respond strictly in this JSON format:
                         }
                     ],
                     model=ai_engine.model,
-                    temperature=0.2
+                    temperature=0.2,
+                    max_tokens=1000
                 )
             
             # 1. Extract the raw string from the Groq API response
@@ -671,7 +673,9 @@ You MUST respond with ONLY a valid JSON object matching this schema:
                     {"role": "user", "content": json.dumps(payload_dict)}
                 ],
                 model=ai_engine.model,
-                temperature=0.2
+                temperature=0.2,
+                response_format={"type": "json_object"},
+                max_tokens=1000
             )
             
             # 1. Extract the raw string from the Groq API response
@@ -756,14 +760,15 @@ async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)
             client = Groq(api_key=os.getenv("GROQ_API_KEY"))
             b64_img = base64.b64encode(contents).decode('utf-8')
             vision_res = client.chat.completions.create(
-                model="qwen/qwen3.6-27b",
+                model="qwen/qwen3.8-27b",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": "Extract the raw payload, URL, or payment string (e.g. upi://) from this QR code. Return ONLY the raw string. If unreadable, return FAILED."},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
                     ]}
                 ],
-                temperature=0.1
+                temperature=0.1,
+                max_tokens=100
             )
             vision_text = vision_res.choices[0].message.content.strip()
             if "FAILED" not in vision_text.upper():
@@ -794,9 +799,10 @@ async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)
 
     try:
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        sanitized_qr_payload = mask_pii_for_forensics(extracted_payload) if extracted_payload else ""
         prompt = f"""
         You are an AI cybersecurity assistant for TRINETRA.
-        Analyze this extracted QR code payload: {extracted_payload}
+        Analyze this extracted QR code payload: {sanitized_qr_payload}
 
         CRITICAL RULES:
         1. Speak to the end-user in simple, everyday language. Avoid complex technical jargon (like 'pa parameters' or 'tracking identifiers') unless it is an actual, confirmed threat.
@@ -832,9 +838,10 @@ async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)
         
         chat_completion = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="openai/gpt-oss-120b",
+            model="qwen/qwen3.8-27b",
             temperature=0.1,
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
+            max_tokens=1000
         )
         
         # Parse the raw AI response
@@ -1047,14 +1054,15 @@ ai_reasoning: Explain how the Web Context and Sensor Data prove your verdict."""
         extracted_context = "Visual context could not be determined."
         try:
             vision_res = client.chat.completions.create(
-                model="qwen/qwen3.6-27b",
+                model="qwen/qwen3.8-27b",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": vision_prompt},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64_img}"}}
                     ]}
                 ],
-                temperature=0.1
+                temperature=0.1,
+                max_tokens=500
             )
             extracted_context = vision_res.choices[0].message.content.strip()
         except Exception as vision_err:
@@ -1131,10 +1139,11 @@ Respond ONLY with a valid JSON object matching this exact schema:
 """
 
         chat_completion = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": threat_prompt}],
             temperature=0.1,
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
+            max_tokens=1000
         )
         raw_content = chat_completion.choices[0].message.content
         specific_fallback_schema = {

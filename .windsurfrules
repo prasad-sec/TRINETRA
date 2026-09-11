@@ -1,0 +1,5 @@
+CRITICAL BACKEND RULE: 
+This project uses Groq exclusively for all LLM interactions. 
+NEVER import or use the `openai` library. 
+NEVER use models like `gpt-4o` or `gpt-3.5-turbo`. 
+Always use `from groq import Groq` and `llama-3.3-70b-versatile`.

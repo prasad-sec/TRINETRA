@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, Info, CheckCircle } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 export default function EmailWorkspace({ setReportData, setIsInvestigating, targetLanguage = 'English' }) {
   const [emailFile, setEmailFile] = useState(null);
@@ -29,7 +30,7 @@ export default function EmailWorkspace({ setReportData, setIsInvestigating, targ
       setIsSubmitting(true);
       if (setIsInvestigating) setIsInvestigating(true);
 
-      const response = await fetch('http://localhost:8000/api/investigate/email', {
+      const response = await fetch(`${API_BASE_URL}/api/investigate/email`, {
         method: 'POST',
         body: formData, 
       });

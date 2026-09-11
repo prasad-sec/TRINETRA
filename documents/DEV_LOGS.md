@@ -105,3 +105,25 @@
 - **Vision Integration:** Verified that the updated parser now passes the complete array of extracted images simultaneously into the Llama 3.2 Vision payload for unified threat analysis.
 - **Frontend Alignment:** Ensured the AIInvestigationResult.jsx dynamic grid properly maps over the extracted images array, correctly rendering all malicious or embedded visual artifacts in the report UI.
 
+## [Phase 15] Command Bridge Modernization, Dynamic Telemetry & Triad Terminal Modals
+**Objective:** Elevate the command bridge navbar from static text to a live telemetry interface, and unify all navigation modal overlays into an architecturally consistent, multi-colored tactical terminal system.
+**Actions:**
+- **Dynamic AI Core Telemetry (`AiCoreStatus.jsx`):** Replaced the hardcoded online text with an active React state component tracking `navigator.onLine` via window event listeners. Dynamically renders `AI CORE: ONLINE` (emerald-400 with a pulsing shadow glow `shadow-[0_0_10px_rgba(52,211,153,0.6)]`) or `AI CORE: OFFLINE` (rose-500 with a rose shadow glow `shadow-[0_0_10px_rgba(225,29,72,0.6)]`) while retaining strict uppercase monospace tracking.
+- **Interactive Reasoning Groq Engine Modal (`ReasoningGroqModal.jsx`):** Transformed the static `Reasoning Groq` header item into an interactive trigger button matching `System About` and `Privacy Shield`. Displays hardware specifications, LPU architecture details, active model parameters (Llama-3.3-70B-Versatile), sub-second latency metrics, and Zero Data Retention (ZDR) policy.
+- **Structural Synchronization with About Hologram:** Refactored both `PrivacyShieldModal` and `ReasoningGroqModal` to adopt the wide `max-w-4xl` skeleton, high-opacity backdrop (`bg-black/90 backdrop-blur-md`), dark glass panel (`bg-[#0a0f18]/95`, `border-cyan-500/30`, subtle inner glow), top cyan gradient accent, cyber sheen mount sweep, and a top-right `[ESC]` close button with red hover styling paired with global keyboard `Escape` event listeners.
+- **Semantic Accent Color Palette (Breaking Monochrome Cyan):** Overhauled terminal sub-cards to feature distinct cybernetic colors:
+  - *Reasoning Groq*: Emerald Green for Processor Architecture (Groq LPU), Purple/Violet for Active Reasoning Model (Llama-3.3-70B), and Amber/Gold for Inference Latency (Sub-second).
+  - *Privacy Shield*: Rose/Crimson for Payment Cards (Luhn Validation), Sky/Cyan for Phone & Contact Numbers (E.164 Regex), and Amber/Yellow for Government Identifiers (Aadhaar / SSN).
+  - *Glassmorphism Depth*: Added `bg-gradient-to-b from-white/[0.04] to-transparent backdrop-blur-md`, colored pill badges, and kinetic `hover:scale-[1.01]` transitions.
+- **Command Bridge Alignment (`LivingDashboard.jsx`):** Integrated `<AiCoreStatus />` and `<ReasoningGroqModal />` into the central command bridge header with vertical rule separators, completing the triad of forensic inspection overlays.
+
+## [Phase 16] Cloud Deployment Hardening & Enterprise Documentation Synchronization
+**Objective:** Resolve all cloud deployment bottlenecks, centralize API routing, harden CORS policies, and synchronize enterprise documentation across the repository.
+**Actions:**
+- **Dynamic API Resolver (`frontend/src/config/api.js`):** Centralized base URL resolution via `import.meta.env.VITE_API_URL` with automatic local fallback (`http://localhost:8000`). Refactored all 5 workspace components (`InvestigationWorkspace.jsx`, `EmailWorkspace.jsx`, `PdfWorkspace.jsx`, `QrWorkspace.jsx`, `ImageWorkspace.jsx`) to eliminate hardcoded localhost endpoints.
+- **Enterprise CORS Hardening (`backend/main.py`):** Expanded CORS middleware to dynamically ingest `ALLOWED_ORIGINS` from environment variables, while adding native regex matching (`https://.*\.vercel\.app`) for zero-config support of Vercel production and preview deployment domains.
+- **Environment Configuration Templates:** Created `.env.example` templates in both `backend/` and `frontend/` documenting all required and optional runtime flags (`GROQ_API_KEY`, `ENVIRONMENT`, `ALLOWED_ORIGINS`, `PORT`, `VITE_API_URL`).
+- **SPA Edge Routing Rewrite (`frontend/vercel.json`):** Configured standard client-side routing rewrites for edge hosting on Vercel, Netlify, and Cloudflare Pages.
+- **Automated Verification:** Verified that backend Pytest passes with 100% success (4 tests in 2.49s) and Vite production bundle compiles cleanly with 0 errors in 1.19s. Synchronized `README.md`, `ARCHITECTURE.md`, `SRS.md`, `SECURITY.md`, and `API_DOCS.md`.
+
+

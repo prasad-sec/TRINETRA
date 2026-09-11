@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { API_BASE_URL } from '../config/api';
 
 export default function PdfWorkspace({ targetLanguage = 'English', onAnalysisComplete, setIsInvestigating, setInvestigationState }) {
   const [file, setFile] = useState(null);
@@ -37,8 +38,7 @@ export default function PdfWorkspace({ targetLanguage = 'English', onAnalysisCom
     }
 
     try {
-      // NOTE: Make sure the URL matches your backend endpoint
-      const response = await fetch('http://localhost:8000/api/investigate/pdf', {
+      const response = await fetch(`${API_BASE_URL}/api/investigate/pdf`, {
         method: 'POST',
         body: formData
       });

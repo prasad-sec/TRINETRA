@@ -23,7 +23,7 @@ class InvestigationReport(BaseModel):
 class AIEngine:
     def __init__(self):
         self.client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = "openai/gpt-oss-120b"
+        self.model = "qwen/qwen3.8-27b"
         
     async def analyze_artifact(self, artifact_type: str, extracted_data: dict, target_language: str = "English") -> dict:
         system_prompt = (
@@ -77,7 +77,9 @@ class AIEngine:
                         "content": json.dumps(extracted_data),
                     }
                 ],
-                model=self.model
+                model=self.model,
+                response_format={"type": "json_object"},
+                max_tokens=1000
             )
             
             # 1. Extract the raw string from the Groq API response

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Upload, FileImage, ShieldAlert, RefreshCw, X } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 export default function QrWorkspace({ onResult, setIsInvestigating, setInvestigationState, targetLanguage }) {
   const [file, setFile] = useState(null);
@@ -55,7 +56,7 @@ export default function QrWorkspace({ onResult, setIsInvestigating, setInvestiga
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/investigate/qr", {
+      const response = await fetch(`${API_BASE_URL}/api/investigate/qr`, {
         method: "POST",
         body: formData,
       });

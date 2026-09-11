@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Upload, FileImage, ShieldAlert, RefreshCw, X } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 export default function ImageWorkspace({ onResult, setIsInvestigating, setInvestigationState, targetLanguage = 'English' }) {
     const [file, setFile] = useState(null);
@@ -55,7 +56,7 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
         }
 
         try {
-            const response = await fetch("http://localhost:8000/api/investigate/image", {
+            const response = await fetch(`${API_BASE_URL}/api/investigate/image`, {
                 method: "POST",
                 body: formData,
             });
