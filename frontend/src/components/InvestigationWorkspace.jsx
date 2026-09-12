@@ -277,7 +277,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
           transition={{ duration: 0.4, ease: "easeOut" }}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 flex flex-col items-center justify-start relative p-4 md:p-8 transition-colors w-full overflow-hidden"
+          className="flex-1 flex flex-col items-center justify-start relative px-4 py-2 md:p-8 transition-colors w-full overflow-hidden"
         >
           
           {/* Background intensity during investigation */}
@@ -290,7 +290,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
           )}
 
           {/* Tab Navigation - Scrollable on mobile */}
-          <div className="w-full max-w-3xl border-b border-zinc-800 z-10 mb-6 md:mb-8">
+          <div className="w-full max-w-3xl border-b border-zinc-800 z-10 mb-3 md:mb-8">
             <div className="flex items-center justify-start md:justify-between overflow-x-auto scrollbar-hide snap-x -mb-[1px]">
               {tabs.map(tab => {
                 const Icon = tab.icon;
@@ -315,14 +315,14 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
           </div>
 
           {/* Main container vertically aligned */}
-          <div className="flex-1 w-full max-w-5xl flex flex-col md:flex-row items-center justify-center gap-16 md:gap-32 z-10">
+          <div className="flex-1 w-full max-w-5xl flex flex-col md:flex-row items-center justify-center gap-3 md:gap-24 lg:gap-32 z-10">
             
             {/* The Eye Core - Visual Anchor with shrink-0 */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={isDashboardActive ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              className="w-64 h-64 md:w-80 md:h-80 shrink-0 flex items-center justify-center relative"
+              className="w-32 h-32 md:w-80 md:h-80 shrink-0 flex items-center justify-center relative"
             >
               <motion.div 
                 className="absolute inset-0 bg-[radial-gradient(circle,rgba(0,240,255,0.12),transparent_60%)] -z-10 rounded-full pointer-events-none"
@@ -351,16 +351,16 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                     exit={{ opacity: 0, x: -20 }}
                     className="flex flex-col justify-center w-full items-center text-center md:items-start md:text-left"
                   >
-                    <div className="mb-6 md:mb-8 w-full">
-                      <h2 className="font-mono text-xl md:text-2xl font-semibold text-zinc-100 mb-2 tracking-tight">Investigation Workspace</h2>
-                      <p className="font-mono text-xs md:text-sm text-zinc-400">Submit a suspicious digital artifact to begin an investigation.</p>
+                    <div className="mb-2.5 md:mb-8 w-full">
+                      <h2 className="font-mono text-base md:text-2xl font-semibold text-zinc-100 mb-0.5 md:mb-2 tracking-tight">Investigation Workspace</h2>
+                      <p className="font-mono text-[11px] md:text-sm text-zinc-400 leading-tight">Submit a suspicious digital artifact to begin an investigation.</p>
                     </div>
 
-                    <div key={activeTab} className="w-full min-h-[260px] flex flex-col justify-center animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
+                    <div key={activeTab} className="w-full min-h-0 md:min-h-[260px] flex flex-col justify-center fade-in-quick">
                       {activeTab === 'URL' ? (
-                        <div className="flex flex-col gap-4 relative w-full group animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
+                        <div className="flex flex-col gap-3 md:gap-4 relative w-full group">
                           <div className="relative flex items-center w-full">
-                            <div className="absolute left-4 text-cyan-500">
+                            <div className="absolute left-3.5 md:left-4 text-cyan-500">
                               <Crosshair className="w-4 h-4 md:w-5 md:h-5" />
                             </div>
                             <input 
@@ -372,7 +372,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                               }}
                               placeholder={tabs.find(t => t.id === 'URL').placeholder}
                               style={{ fontVariantLigatures: 'none', fontFeatureSettings: '"liga" 0, "calt" 0' }}
-                              className="w-full bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] rounded-none py-4 md:py-5 pl-12 md:pl-14 pr-4 text-zinc-100 font-mono text-sm md:text-base focus:outline-none focus:border-cyan-500/30 focus:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] transition-all placeholder:text-zinc-600"
+                              className="w-full bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] rounded-none py-3.5 md:py-5 pl-11 md:pl-14 pr-4 text-zinc-100 font-mono text-xs md:text-base focus:outline-none focus:border-cyan-500/30 focus:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] transition-all placeholder:text-zinc-600"
                               onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
                             />
                           </div>
@@ -383,7 +383,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                           )}
                           <button 
                             onClick={handleStartInvestigation} 
-                            className="w-full py-4 md:py-5 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-cyan-400 font-mono font-bold text-xs md:text-sm uppercase tracking-[0.3em] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] rounded-none transition-all"
+                            className="w-full py-3.5 md:py-5 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-cyan-400 font-mono font-bold text-xs md:text-sm uppercase tracking-[0.3em] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] rounded-none transition-all cursor-pointer"
                           >
                             BEGIN INVESTIGATION
                           </button>
@@ -443,8 +443,8 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                     exit={{ opacity: 0, x: -20 }}
                     className="w-full flex flex-col justify-center text-center md:text-left items-center md:items-start"
                   >
-                    <div className="mb-6 md:mb-8 flex flex-col items-center md:items-start">
-                      <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-2">
+                    <div className="mb-3 md:mb-8 flex flex-col items-center md:items-start">
+                      <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-1 md:mb-2">
                         {investigationState === 'reasoning' ? 'AI Core Processing Vector...' : 'AI Core Processing Vector...'}
                       </h3>
                       <p className="font-mono text-[10px] md:text-xs text-zinc-500">

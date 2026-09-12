@@ -178,7 +178,7 @@ const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
       </svg>
       
       {/* Progress Text overlay */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none mt-40">
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none mt-20 md:mt-40">
         <AnimatePresence>
           {isBusy && progress > 0 && (
             <motion.span 

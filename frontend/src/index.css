@@ -46,6 +46,20 @@ input, textarea {
     scrollbar-width: none;
 }
 
+/* Micro-fade animation for workspace tab switches */
+.fade-in-quick {
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Mobile Performance & Rendering Optimizations */
 @media (max-width: 768px) {
   /* Globally disable all backdrop filters on mobile to eliminate GPU thrashing */
