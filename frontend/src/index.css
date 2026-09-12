@@ -31,6 +31,12 @@ html, body, #root {
   font-family: var(--font-sans);
 }
 
+/* Disable code ligatures on inputs and textareas so slashes (//) and symbols render as distinct typed characters */
+input, textarea {
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
 /* Scrollbar Hide Utility */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;

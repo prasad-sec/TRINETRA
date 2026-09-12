@@ -66,6 +66,56 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
     { id: 'IMAGES', label: 'IMAGES', icon: ImageIcon },
   ];
 
+  const TAB_IDS = tabs.map(t => t.id);
+  const touchStartRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    if (isBusy) return;
+    const targetTag = e.target?.tagName;
+    if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT') {
+      return;
+    }
+    if (e.touches && e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (isBusy || !touchStartRef.current) return;
+    if (e.changedTouches && e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+      const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      // Horizontal swipe distance > 50px AND vertical delta is minimal to avoid scrolling conflict
+      if (absX > 50 && absY < 80 && absX > absY * 1.2) {
+        const currentIndex = TAB_IDS.indexOf(activeTab);
+        if (currentIndex !== -1) {
+          if (deltaX < 0) {
+            // Swipe Left (negative delta X) = Go to Next tab
+            const nextIdx = Math.min(currentIndex + 1, TAB_IDS.length - 1);
+            if (nextIdx !== currentIndex) {
+              setActiveTab(TAB_IDS[nextIdx]);
+              setErrorMsg('');
+            }
+          } else {
+            // Swipe Right (positive delta X) = Go to Previous tab
+            const prevIdx = Math.max(currentIndex - 1, 0);
+            if (prevIdx !== currentIndex) {
+              setActiveTab(TAB_IDS[prevIdx]);
+              setErrorMsg('');
+            }
+          }
+        }
+      }
+    }
+    touchStartRef.current = null;
+  };
+
   useEffect(() => {
     if (onStateChange) onStateChange(investigationState);
   }, [investigationState, onStateChange]);
@@ -225,6 +275,8 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 15 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="flex-1 flex flex-col items-center justify-start relative p-4 md:p-8 transition-colors w-full overflow-hidden"
         >
           
@@ -238,26 +290,28 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
           )}
 
           {/* Tab Navigation - Scrollable on mobile */}
-          <div className="w-full max-w-3xl flex items-center justify-start md:justify-between mb-6 md:mb-8 border-b border-zinc-800 z-10 overflow-x-auto scrollbar-hide snap-x gap-1.5">
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => { setActiveTab(tab.id); setErrorMsg(''); }}
-                  disabled={isBusy}
-                  className={`flex-1 min-w-[90px] md:min-w-0 h-10 py-2 px-3 inline-flex items-center justify-center gap-1.5 text-[11px] font-mono font-semibold tracking-wider uppercase leading-none transition-all relative shrink-0 snap-center rounded-none border-b-2 ${
-                    isActive 
-                      ? 'text-cyan-400 border-cyan-400 bg-zinc-950/60 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' 
-                      : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-950/40 hover:backdrop-blur-xl'
-                  } ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="inline-block leading-none">{tab.label}</span>
-                </button>
-              );
-            })}
+          <div className="w-full max-w-3xl border-b border-zinc-800 z-10 mb-6 md:mb-8">
+            <div className="flex items-center justify-start md:justify-between overflow-x-auto scrollbar-hide snap-x -mb-[1px]">
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setActiveTab(tab.id); setErrorMsg(''); }}
+                    disabled={isBusy}
+                    className={`flex-1 min-w-[95px] md:min-w-0 h-11 px-3 flex items-center justify-center gap-2 text-[11px] font-mono font-semibold tracking-wider uppercase leading-none transition-all relative shrink-0 snap-center rounded-none border-b-2 box-border ${
+                      isActive 
+                        ? 'text-cyan-400 border-cyan-400 bg-zinc-950/60' 
+                        : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-950/40'
+                    } ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${tab.id === 'URL' ? '-translate-y-[1px]' : ''}`} />
+                    <span className="leading-none whitespace-nowrap">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Main container vertically aligned */}
@@ -317,6 +371,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                                 setErrorMsg('');
                               }}
                               placeholder={tabs.find(t => t.id === 'URL').placeholder}
+                              style={{ fontVariantLigatures: 'none', fontFeatureSettings: '"liga" 0, "calt" 0' }}
                               className="w-full bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] rounded-none py-4 md:py-5 pl-12 md:pl-14 pr-4 text-zinc-100 font-mono text-sm md:text-base focus:outline-none focus:border-cyan-500/30 focus:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] transition-all placeholder:text-zinc-600"
                               onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
                             />
