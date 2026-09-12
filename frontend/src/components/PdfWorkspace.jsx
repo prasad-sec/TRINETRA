@@ -97,7 +97,7 @@ export default function PdfWorkspace({ targetLanguage = 'English', onAnalysisCom
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-1 sm:p-4 md:p-6">
+    <div className="w-full max-w-4xl mx-auto p-6 animate-[fadeIn_0.5s_ease-in-out] transition-opacity duration-700 ease-in-out opacity-100">
       {/* Hidden File Input - MUST stay mounted */}
       <input
         type="file"
@@ -113,35 +113,35 @@ export default function PdfWorkspace({ targetLanguage = 'English', onAnalysisCom
         disabled={isLoading}
       />
 
-      <div className="flex flex-col space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex flex-col space-y-6">
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={!file && !isLoading ? handleBrowseClick : undefined}
-          className={`border-2 border-dashed rounded-xl p-4 sm:p-6 md:p-10 text-center transition-all duration-300 ${
+          className={`border-2 border-dashed rounded-xl p-10 text-center transition-all duration-300 ${
             isDragging 
               ? 'border-cyan-400 bg-cyan-950/20 scale-[1.01]' 
               : 'border-cyan-500/20 hover:border-cyan-500/40 bg-zinc-950/70 backdrop-blur-md shadow-xl shadow-cyan-950/30'
           } ${!file && !isLoading ? 'cursor-pointer' : ''} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {file ? (
-            <div className="flex flex-col items-center justify-center space-y-2 md:space-y-4">
-              <div className="p-2.5 md:p-4 bg-cyan-900/40 rounded-full text-cyan-400">
-                <svg className="w-7 h-7 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="p-4 bg-cyan-900/40 rounded-full text-cyan-400">
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
               <div className="text-center">
-                <p className="text-sm md:text-lg font-medium text-slate-200">{file.name}</p>
-                <p className="text-xs md:text-sm text-cyan-500 mt-0.5 md:mt-1">{formatSize(file.size)}</p>
+                <p className="text-lg font-medium text-slate-200">{file.name}</p>
+                <p className="text-sm text-cyan-500 mt-1">{formatSize(file.size)}</p>
               </div>
-              <div className="flex space-x-2 md:space-x-3 mt-2 md:mt-4">
+              <div className="flex space-x-3 mt-4">
                 <button
                   type="button"
                   disabled={isLoading}
                   onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                  className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg transition-colors text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Remove File
                 </button>
@@ -149,39 +149,39 @@ export default function PdfWorkspace({ targetLanguage = 'English', onAnalysisCom
                   type="button"
                   disabled={isLoading}
                   onClick={handleBrowseClick}
-                  className="px-3 py-1.5 md:px-4 md:py-2 border border-slate-600 hover:border-slate-400 text-slate-300 font-medium rounded-lg transition-colors text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 border border-slate-600 hover:border-slate-400 text-slate-300 font-medium rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Change
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center space-y-2 md:space-y-4 pointer-events-none">
-              <div className="p-2.5 md:p-4 bg-slate-800/80 rounded-full text-cyan-400">
-                <svg className="w-7 h-7 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex flex-col items-center justify-center space-y-4 pointer-events-none">
+              <div className="p-4 bg-slate-800/80 rounded-full text-cyan-400">
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm md:text-lg font-medium text-slate-200">Drag & Drop suspicious PDF document</p>
-                <p className="text-xs md:text-sm text-slate-400 mt-0.5 md:mt-1">or click anywhere in this box to select a file</p>
+                <p className="text-lg font-medium text-slate-200">Drag & Drop suspicious PDF document</p>
+                <p className="text-sm text-slate-400 mt-1">or click anywhere in this box to select a file</p>
               </div>
               <button
                 type="button"
                 onClick={handleBrowseClick}
                 disabled={isLoading}
-                className="pointer-events-auto px-4 py-1.5 md:px-5 md:py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold rounded-lg shadow-lg transition-colors text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="pointer-events-auto px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold rounded-lg shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Browse Files
               </button>
             </div>
           )}
-          {error && <p className="text-red-400 text-xs md:text-sm mt-3 md:mt-4">{error}</p>}
+          {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
         </div>
 
         {/* Action Button */}
         <button
-          className={`w-full py-2.5 md:py-4 mt-3 md:mt-8 font-mono text-xs md:text-sm tracking-[0.2em] md:tracking-widest rounded-xl transition-all duration-300 cursor-pointer ${
+          className={`w-full py-4 mt-8 font-mono tracking-widest rounded-xl transition-all duration-300 ${
             !file || isLoading 
               ? 'bg-slate-900/50 border border-slate-800 text-slate-600 cursor-not-allowed' 
               : 'bg-cyan-950/40 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-900/60 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]'

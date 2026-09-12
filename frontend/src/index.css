@@ -48,17 +48,15 @@ input, textarea {
 
 /* Micro-fade animation for workspace tab switches */
 .fade-in-quick {
-  animation: fadeInQuick 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.15s ease-in-out;
 }
 
-@keyframes fadeInQuick {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
