@@ -44,6 +44,7 @@ default_origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
     "http://localhost:5174",
+    "https://trinetra-sec.vercel.app",
 ]
 env_origins = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "").split(",") if origin.strip()]
 cors_origins = list(set(default_origins + env_origins))
