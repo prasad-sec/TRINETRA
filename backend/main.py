@@ -62,5 +62,4 @@ app.add_middleware(
 async def health_check():
     return {"system": "Active", "ai_core": "Cloud API Connected"}
 
-for route in app.routes:
-    print(f"Registered Route: {route.path} [{getattr(route, 'methods', '')}]")
+
