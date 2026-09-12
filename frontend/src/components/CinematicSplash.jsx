@@ -5,7 +5,6 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
   const containerControls = useAnimation();
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [logIndex, setLogIndex] = useState(0);
-
   const [skipped, setSkipped] = useState(false);
 
   const logs = [
@@ -18,7 +17,8 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
     "System Ready."
   ];
 
-  const handleSkip = () => {
+  const handleSkip = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     if (skipped) return;
     setSkipped(true);
     if (onTransitionStart) onTransitionStart();
@@ -51,13 +51,11 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
       }, isMobile ? 300 : 400);
     }
 
-    // End sequence
+    // End sequence: purely GPU-composited transform and opacity (no filter: brightness)
     const endTimeout = setTimeout(() => {
       if (skipped) return;
-      // Trigger dashboard to start fading in underneath
       if (onTransitionStart) onTransitionStart();
       
-      // Animate the eye and container using purely GPU-accelerated transform and opacity
       containerControls.start({
         scale: [1, 1.15, 6],
         opacity: [1, 0.9, 0],
@@ -77,7 +75,8 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
     // Quick 1-second launch
     return (
       <motion.div
-        className="fixed inset-0 z-50 bg-theme-bg flex items-center justify-center pointer-events-none"
+        onClick={handleSkip}
+        className="fixed inset-0 z-50 bg-theme-bg flex items-center justify-center pointer-events-auto cursor-pointer"
         initial={{ opacity: 1 }}
         animate={containerControls}
         exit={{ opacity: 0 }}
@@ -94,23 +93,27 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
     );
   }
 
-  // Full cinematic launch
+  // Full cinematic launch with tap-anywhere-to-skip
   return (
     <motion.div
-      className="fixed inset-0 z-50 bg-theme-bg flex flex-col items-center justify-center overflow-hidden pointer-events-none transform-gpu"
+      onClick={handleSkip}
+      className="fixed inset-0 z-50 bg-theme-bg flex flex-col items-center justify-center overflow-hidden pointer-events-auto cursor-pointer select-none transform-gpu"
       initial={{ opacity: 1, scale: 1 }}
       animate={containerControls}
       exit={{ opacity: 0 }}
       style={{ willChange: "transform, opacity" }}
     >
-      {/* Skip Button for mobile & rapid access */}
+      {/* Subtle "Tap to Skip" button visible immediately for mobile users */}
       <button
-        onClick={handleSkip}
-        className="absolute top-6 right-6 z-50 pointer-events-auto px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-zinc-950/80 hover:bg-cyan-500/10 hover:border-cyan-500/60 text-cyan-400 font-mono text-[10px] tracking-widest uppercase transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.2)] cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleSkip(e);
+        }}
+        className="absolute top-6 right-6 z-50 pointer-events-auto px-3 py-1.5 rounded-full border border-cyan-500/30 bg-zinc-950/85 hover:bg-cyan-500/10 hover:border-cyan-500/60 text-cyan-400 font-mono text-[10px] tracking-widest uppercase transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.2)] cursor-pointer"
         aria-label="Skip splash screen"
       >
-        <span>Skip</span>
-        <span className="text-zinc-500 font-bold">››</span>
+        <span>Tap to Skip</span>
+        <span className="text-cyan-500/70 font-bold">››</span>
       </button>
 
       {/* Intense Radial Lighting Background */}
@@ -118,7 +121,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/40 via-theme-bg to-theme-bg"></div>
       </div>
 
-      <div className="relative flex flex-col items-center w-full max-w-2xl px-6 z-10">
+      <div className="relative flex flex-col items-center w-full max-w-2xl px-6 z-10 pointer-events-none">
         
         {/* ── CYBERNETIC THIRD EYE HUD ── */}
         <div className="relative flex items-center justify-center w-64 h-64 mb-12">
@@ -222,8 +225,7 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
           {/* LAYER 4: Central Mecha Iris Eye */}
           <motion.svg
             viewBox="0 0 100 100"
-            className="absolute w-24 h-24 transform-gpu will-change-transform will-change-[opacity]"
-            style={{ filter: 'drop-shadow(0 0 12px rgba(6,182,212,0.6))' }}
+            className="absolute w-24 h-24 transform-gpu will-change-transform will-change-[opacity] drop-shadow-[0_0_12px_rgba(6,182,212,0.6)]"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.9, ease: 'backOut' }}
@@ -260,25 +262,19 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
               style={{ transformOrigin: '50px 50px' }}
             />
 
-            {/* Pupil core — neon cyan pulse */}
+            {/* Pupil core — neon cyan pulse with CSS drop-shadow & GPU scale/opacity */}
             <motion.circle
               cx="50" cy="50" r="5"
               fill="#00F0FF"
+              className="drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"
               initial={{ opacity: 0, scale: 0 }}
               animate={{
                 opacity: [0, 1, 0.7, 1],
                 scale: [0, 1.2, 1, 1.1],
-                filter: [
-                  'drop-shadow(0 0 4px rgba(6,182,212,0.5))',
-                  'drop-shadow(0 0 14px rgba(6,182,212,1))',
-                  'drop-shadow(0 0 8px rgba(6,182,212,0.7))',
-                  'drop-shadow(0 0 14px rgba(6,182,212,1))'
-                ]
               }}
               transition={{
                 opacity: { duration: 1.2, delay: 1.7, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' },
-                scale: { duration: 1.2, delay: 1.7, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' },
-                filter: { duration: 1.2, delay: 1.7, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }
+                scale: { duration: 1.2, delay: 1.7, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }
               }}
             />
 
@@ -337,6 +333,13 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
             Seeing Beyond Deception
           </motion.h2>
         </div>
+      </div>
+
+      {/* Subtle "Tap anywhere to skip" indicator */}
+      <div className="absolute bottom-6 z-40 pointer-events-none text-center">
+        <span className="font-mono text-[9px] md:text-[10px] tracking-[0.25em] text-slate-500/80 uppercase">
+          Tap anywhere to skip
+        </span>
       </div>
     </motion.div>
   );

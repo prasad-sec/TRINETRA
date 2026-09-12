@@ -247,15 +247,14 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                   key={tab.id}
                   onClick={() => { setActiveTab(tab.id); setErrorMsg(''); }}
                   disabled={isBusy}
-                  className={`flex-1 min-w-[90px] md:min-w-0 py-2 px-3 flex items-center justify-center gap-1.5 text-[11px] font-mono font-semibold tracking-wider uppercase transition-all relative shrink-0 snap-center rounded-none ${
-                    isActive ? 'text-cyan-400 bg-zinc-950/60 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-950/40 hover:backdrop-blur-xl'
+                  className={`flex-1 min-w-[90px] md:min-w-0 h-10 py-2 px-3 inline-flex items-center justify-center gap-1.5 text-[11px] font-mono font-semibold tracking-wider uppercase leading-none transition-all relative shrink-0 snap-center rounded-none border-b-2 ${
+                    isActive 
+                      ? 'text-cyan-400 border-cyan-400 bg-zinc-950/60 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]' 
+                      : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-950/40 hover:backdrop-blur-xl'
                   } ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="inline-block">{tab.label}</span>
-                  {isActive && (
-                    <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.8)]" />
-                  )}
+                  <span className="inline-block leading-none">{tab.label}</span>
                 </button>
               );
             })}
@@ -303,7 +302,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                       <p className="font-mono text-xs md:text-sm text-zinc-400">Submit a suspicious digital artifact to begin an investigation.</p>
                     </div>
 
-                    <div key={activeTab} className="w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
+                    <div key={activeTab} className="w-full min-h-[260px] flex flex-col justify-center animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
                       {activeTab === 'URL' ? (
                         <div className="flex flex-col gap-4 relative w-full group animate-[fadeIn_0.5s_ease-in-out] opacity-100 transition-opacity duration-700 ease-in-out">
                           <div className="relative flex items-center w-full">

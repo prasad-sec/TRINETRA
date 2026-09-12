@@ -15,6 +15,11 @@
   --color-theme-border: rgba(255, 255, 255, 0.06);
 }
 
+html, body {
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
@@ -37,29 +42,19 @@ html, body, #root {
 
 /* Mobile Performance & Rendering Optimizations */
 @media (max-width: 768px) {
-  /* Disable GPU-heavy backdrop-filter on mobile to prevent continuous frame drops */
-  .backdrop-blur-sm,
-  .backdrop-blur,
-  .backdrop-blur-md,
-  .backdrop-blur-lg,
-  .backdrop-blur-xl,
-  .backdrop-blur-2xl,
-  .backdrop-blur-3xl {
+  /* Globally disable all backdrop filters on mobile to eliminate GPU thrashing */
+  *, *::before, *::after {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
 
-  /* Solidify card backgrounds so they stay high contrast and ultra-readable without GPU blur passes */
+  /* Replace transparent glassmorphism background utility classes with high-opacity solid color */
   .bg-zinc-950\/60,
   .bg-zinc-950\/70,
-  .bg-zinc-950\/75,
   .bg-zinc-950\/80,
-  .bg-zinc-950\/90 {
+  .bg-theme-surface\/50,
+  [class*="backdrop-blur"] {
     background-color: rgba(9, 9, 11, 0.95) !important;
-  }
-
-  .bg-theme-surface\/50 {
-    background-color: rgba(14, 17, 23, 0.96) !important;
   }
 
   /* Eliminate 300ms mobile touch delay */
@@ -74,9 +69,14 @@ html, body, #root {
   }
 }
 
-/* Lazy off-screen card rendering with intrinsic sizing to prevent scroll jumping */
+/* Off-screen rendering optimization for heavy containers */
+.workspace-container,
+.results-container {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
 .cv-auto {
   content-visibility: auto;
   contain-intrinsic-size: 0 450px;
 }
-

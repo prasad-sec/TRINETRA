@@ -113,37 +113,37 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
         </div>
 
         {/* ================= METRICS GRID (1, 3, 4, Media) ================= */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+        <div className={`grid gap-4 w-full ${isImage ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 md:grid-cols-3'}`}>
           
           {/* ================= 1. Investigation Verdict ================= */}
-          <div className={`flex flex-col bg-zinc-950/70 backdrop-blur-md border ${activeStyle.border} hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6`}>
+          <div className={`h-full flex flex-col justify-between bg-zinc-950/70 backdrop-blur-md border ${activeStyle.border} hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6`}>
             <div className="flex items-center justify-between mb-4 shrink-0">
               <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Verdict</span>
               <ShieldAlert className="w-5 h-5" style={{ color: activeStyle.icon }} />
             </div>
-            <div className="flex-1 flex flex-col justify-center items-center w-full px-3">
-              <div className={`font-mono text-2xl sm:text-3xl md:text-4xl font-bold mb-2 ${activeStyle.text} tracking-wide overflow-hidden text-ellipsis whitespace-nowrap text-center w-full`}>{activeStyle.label}</div>
+            <div className="flex-1 flex flex-col justify-center items-center w-full px-2">
+              <div className={`font-mono text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold mb-2 ${activeStyle.text} tracking-wide overflow-hidden text-ellipsis whitespace-nowrap text-center w-full`}>{activeStyle.label}</div>
             </div>
           </div>
 
           {/* ================= 3. Threat Assessment ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
+          <div className="h-full flex flex-col justify-between bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4 shrink-0">
               <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Threat Assessment</span>
               <Crosshair className="w-5 h-5 text-cyan-500" />
             </div>
             <div className="flex-1 flex flex-col items-center justify-center text-center">
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="font-mono text-5xl font-bold text-zinc-100">{threatScore}</span>
+                <span className="font-mono text-4xl sm:text-5xl font-bold text-zinc-100">{threatScore}</span>
                 <span className="font-mono text-sm text-zinc-500">/ 100</span>
               </div>
-              <div className="font-mono text-sm font-semibold uppercase tracking-widest text-zinc-400">{riskLevel}</div>
+              <div className="font-mono text-xs sm:text-sm font-semibold uppercase tracking-widest text-zinc-400">{riskLevel}</div>
             </div>
           </div>
           
-        {/* ================= 4. Classification Confidence ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col relative overflow-hidden">
-             <div className="flex items-center justify-between mb-4 shrink-0 z-10">
+          {/* ================= 4. Classification Confidence ================= */}
+          <div className="h-full flex flex-col justify-between bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 relative overflow-hidden">
+            <div className="flex items-center justify-between mb-4 shrink-0 z-10">
               <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Confidence</span>
               <Search className="w-5 h-5 text-cyan-500" />
             </div>
@@ -177,7 +177,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
           {/* ================= Media Origin Analysis (Image Only) ================= */}
           {isImage && (
-            <div className={`bg-zinc-950/70 backdrop-blur-md border ${mediaOrigin === 'AI-GENERATED' ? 'border-fuchsia-500/30' : 'border-cyan-500/30'} hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-6 flex flex-col relative overflow-hidden`}>
+            <div className={`h-full flex flex-col justify-between bg-zinc-950/70 backdrop-blur-md border ${mediaOrigin === 'AI-GENERATED' ? 'border-fuchsia-500/30' : 'border-cyan-500/30'} hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 relative overflow-hidden`}>
               <div className="flex items-center justify-between mb-4 shrink-0 z-10">
                 <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Media Origin</span>
                 <Search className={`w-5 h-5 ${mediaOrigin === 'AI-GENERATED' ? 'text-fuchsia-500' : 'text-cyan-500'}`} />
