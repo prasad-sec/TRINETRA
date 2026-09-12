@@ -35,3 +35,48 @@ html, body, #root {
     scrollbar-width: none;
 }
 
+/* Mobile Performance & Rendering Optimizations */
+@media (max-width: 768px) {
+  /* Disable GPU-heavy backdrop-filter on mobile to prevent continuous frame drops */
+  .backdrop-blur-sm,
+  .backdrop-blur,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-3xl {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Solidify card backgrounds so they stay high contrast and ultra-readable without GPU blur passes */
+  .bg-zinc-950\/60,
+  .bg-zinc-950\/70,
+  .bg-zinc-950\/75,
+  .bg-zinc-950\/80,
+  .bg-zinc-950\/90 {
+    background-color: rgba(9, 9, 11, 0.95) !important;
+  }
+
+  .bg-theme-surface\/50 {
+    background-color: rgba(14, 17, 23, 0.96) !important;
+  }
+
+  /* Eliminate 300ms mobile touch delay */
+  button, input, textarea, a, select {
+    touch-action: manipulation;
+  }
+
+  /* Smooth momentum scrolling on mobile devices */
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Lazy off-screen card rendering with intrinsic sizing to prevent scroll jumping */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 450px;
+}
+

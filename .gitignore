@@ -12,6 +12,12 @@
 *.py[cod]
 *.pyo
 
+# Testing & Coverage
+.pytest_cache/
+**/.pytest_cache/
+.coverage
+htmlcov/
+
 # Virtual Environments
 venv/
 .venv/

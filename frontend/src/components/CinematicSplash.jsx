@@ -6,6 +6,8 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
   const [isFirstLaunch, setIsFirstLaunch] = useState(true);
   const [logIndex, setLogIndex] = useState(0);
 
+  const [skipped, setSkipped] = useState(false);
+
   const logs = [
     "AI Core Initializing...",
     "Loading Threat Intelligence...",
@@ -16,47 +18,60 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
     "System Ready."
   ];
 
+  const handleSkip = () => {
+    if (skipped) return;
+    setSkipped(true);
+    if (onTransitionStart) onTransitionStart();
+    containerControls.start({
+      opacity: 0,
+      scale: 1.05,
+      transition: { duration: 0.35, ease: "easeOut" }
+    }).then(() => {
+      onComplete();
+    });
+  };
+
   useEffect(() => {
-    // Forcing to true for now so you can see the changes.
-    // Normally this would be:
-    // const hasLaunched = localStorage.getItem('trinetra_launched');
     setIsFirstLaunch(true);
   }, []);
 
   useEffect(() => {
-    const duration = isFirstLaunch ? 5000 : 1000;
+    const isMobile = window.innerWidth < 768;
+    const duration = isFirstLaunch ? (isMobile ? 3800 : 5000) : 1000;
     
     // Log sequence for first launch
+    let logInterval;
     if (isFirstLaunch) {
-      const logInterval = setInterval(() => {
+      logInterval = setInterval(() => {
         setLogIndex(prev => {
           if (prev < logs.length - 1) return prev + 1;
           clearInterval(logInterval);
           return prev;
         });
-      }, 400); // 7 logs * 400ms = 2.8s
-      
-      setTimeout(() => clearInterval(logInterval), 3000);
+      }, isMobile ? 300 : 400);
     }
 
     // End sequence
     const endTimeout = setTimeout(() => {
+      if (skipped) return;
       // Trigger dashboard to start fading in underneath
       if (onTransitionStart) onTransitionStart();
       
-      // Animate the eye and container to create the iris fly-through effect
+      // Animate the eye and container using purely GPU-accelerated transform and opacity
       containerControls.start({
-        scale: [1, 1.2, 8],
-        opacity: [1, 1, 0],
-        filter: ["brightness(1)", "brightness(1.5)", "brightness(2)"],
-        transition: { duration: 0.8, times: [0, 0.3, 1], ease: "easeInOut" }
+        scale: [1, 1.15, 6],
+        opacity: [1, 0.9, 0],
+        transition: { duration: 0.65, times: [0, 0.3, 1], ease: "easeInOut" }
       }).then(() => {
         onComplete();
       });
-    }, duration - 800);
+    }, duration - 650);
 
-    return () => clearTimeout(endTimeout);
-  }, [containerControls, onComplete, isFirstLaunch, logs.length, onTransitionStart]);
+    return () => {
+      if (logInterval) clearInterval(logInterval);
+      clearTimeout(endTimeout);
+    };
+  }, [containerControls, onComplete, isFirstLaunch, logs.length, onTransitionStart, skipped]);
 
   if (!isFirstLaunch) {
     // Quick 1-second launch
@@ -79,15 +94,25 @@ const CinematicSplash = ({ onComplete, onTransitionStart }) => {
     );
   }
 
-  // Full 6-second cinematic launch
+  // Full cinematic launch
   return (
     <motion.div
       className="fixed inset-0 z-50 bg-theme-bg flex flex-col items-center justify-center overflow-hidden pointer-events-none transform-gpu"
       initial={{ opacity: 1, scale: 1 }}
       animate={containerControls}
       exit={{ opacity: 0 }}
-      style={{ willChange: "transform, opacity, filter" }}
+      style={{ willChange: "transform, opacity" }}
     >
+      {/* Skip Button for mobile & rapid access */}
+      <button
+        onClick={handleSkip}
+        className="absolute top-6 right-6 z-50 pointer-events-auto px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-zinc-950/80 hover:bg-cyan-500/10 hover:border-cyan-500/60 text-cyan-400 font-mono text-[10px] tracking-widest uppercase transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.2)] cursor-pointer"
+        aria-label="Skip splash screen"
+      >
+        <span>Skip</span>
+        <span className="text-zinc-500 font-bold">››</span>
+      </button>
+
       {/* Intense Radial Lighting Background */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/40 via-theme-bg to-theme-bg"></div>

@@ -91,15 +91,13 @@ const AIAssistantEye = ({ state = 'idle', progress = 0, className = '' }) => {
             stroke="currentColor" 
             strokeWidth="0.5" 
             strokeDasharray="2 2" 
+            className="drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
             animate={{ 
-              opacity: [0.3, 1, 0.3], 
-              filter: [
-                "drop-shadow(0 0 5px rgba(34,211,238,0.4))", 
-                "drop-shadow(0 0 15px rgba(34,211,238,1))", 
-                "drop-shadow(0 0 5px rgba(34,211,238,0.4))"
-              ] 
+              opacity: [0.35, 1, 0.35],
+              scale: [0.99, 1.01, 0.99]
             }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            style={{ transformOrigin: '50px 50px' }}
           />
         )}
       </motion.svg>

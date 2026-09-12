@@ -6,19 +6,13 @@ import ReasoningGroqModal from './ReasoningGroqModal';
 import { motion } from 'framer-motion';
 import { Eye } from 'lucide-react';
 const LivingDashboard = ({ isDashboardActive = true, onOpenAbout }) => {
-  const [aiState, setAiState] = useState('idle'); // idle, thinking, alert
+  const [_aiState, setAiState] = useState('idle'); // idle, thinking, alert
   const [reportLanguage] = useState('English');
 
   const handleWorkspaceStateChange = (state) => {
     if (state === 'investigating') setAiState('thinking');
     else if (state === 'complete') setAiState('alert');
     else setAiState('idle');
-  };
-
-  const getInvestigationStatus = () => {
-    if (aiState === 'thinking') return 'INVESTIGATING';
-    if (aiState === 'alert') return 'ANALYSIS COMPLETE';
-    return 'READY';
   };
 
   return (

@@ -13,3 +13,4 @@ slowapi
 pytest
 httpx
 extract-msg
+python-dotenv

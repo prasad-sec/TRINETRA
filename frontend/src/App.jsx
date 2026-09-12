@@ -12,8 +12,8 @@ function App() {
 
   return (
     <div className="relative w-full min-h-screen bg-theme-bg overflow-x-hidden flex">
-      {/* Background canvas layer always present */}
-      <NetworkNodes />
+      {/* Background canvas layer always present (paused while splash covers screen) */}
+      <NetworkNodes isPaused={showSplash && !isTransitioning} />
 
 
 

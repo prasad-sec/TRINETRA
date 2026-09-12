@@ -233,7 +233,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           {/* ================= 6. Evidence Collected ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
+          <div className="cv-auto bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2">
               <Database className="w-4 h-4 text-cyan-500"/> Evidence Collected
             </h2>
@@ -272,7 +272,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
 
           {/* ================= 7. Indicators of Compromise (IoCs) ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
+          <div className="cv-auto bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-rose-400"/> Indicators of Compromise
             </h2>
@@ -307,7 +307,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         {/* ================= 8. AI Analyst Reasoning ================= */}
         {aiReasoning ? (
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 md:p-8 relative overflow-hidden">
+          <div className="cv-auto bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 md:p-8 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-zinc-900 via-cyan-500 to-zinc-900 opacity-80 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2 shrink-0">
                <Cpu className="w-4 h-4" /> AI Investigation Reasoning
@@ -324,7 +324,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           {/* ================= 9. Recommended Actions ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
+          <div className="cv-auto bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2 shrink-0">
               <CheckCircle className="w-4 h-4 text-emerald-500"/> Recommended Actions
             </h2>
@@ -342,7 +342,7 @@ const AIInvestigationResult = ({ onReset, activeTab, apiResult, artifactName: pr
           </div>
           
           {/* ================= 10. Investigation Conclusion ================= */}
-          <div className="bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
+          <div className="cv-auto bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors duration-300 shadow-xl shadow-cyan-950/30 rounded-xl p-4 sm:p-6 flex flex-col">
             <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-400 mb-4 flex items-center gap-2 shrink-0">
               <FileText className="w-4 h-4 text-cyan-500"/> Investigation Conclusion
             </h2>
