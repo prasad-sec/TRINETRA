@@ -290,7 +290,7 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
           )}
 
           {/* Tab Navigation - Scrollable on mobile */}
-          <div className="w-full max-w-3xl border-b border-zinc-800 z-10 mb-3 md:mb-8">
+          <div className="w-full max-w-3xl border-b border-zinc-800 z-10 mb-2.5 md:mb-8">
             <div className="flex items-center justify-start md:justify-between overflow-x-auto scrollbar-hide snap-x -mb-[1px]">
               {tabs.map(tab => {
                 const Icon = tab.icon;
@@ -300,13 +300,13 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                     key={tab.id}
                     onClick={() => { setActiveTab(tab.id); setErrorMsg(''); }}
                     disabled={isBusy}
-                    className={`flex-1 min-w-[95px] md:min-w-0 h-11 px-3 flex items-center justify-center gap-2 text-[11px] font-mono font-semibold tracking-wider uppercase leading-none transition-all relative shrink-0 snap-center rounded-none border-b-2 box-border ${
+                    className={`flex-1 min-w-[70px] sm:min-w-[80px] md:min-w-0 h-8 md:h-11 px-2 md:px-3 flex items-center justify-center gap-1.5 md:gap-2 text-[9.5px] md:text-[11px] font-mono font-semibold tracking-wider uppercase leading-none transition-all relative shrink-0 snap-center rounded-none border-b-2 box-border ${
                       isActive 
                         ? 'text-cyan-400 border-cyan-400 bg-zinc-950/60' 
                         : 'text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-950/40'
                     } ${isBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${tab.id === 'URL' ? '-translate-y-[1px]' : ''}`} />
+                    <Icon className={`w-3 h-3 md:w-3.5 md:h-3.5 shrink-0 ${tab.id === 'URL' ? '-translate-y-[1px]' : ''}`} />
                     <span className="leading-none whitespace-nowrap">{tab.label}</span>
                   </button>
                 );
@@ -351,86 +351,97 @@ const InvestigationWorkspace = ({ onStateChange, isDashboardActive = true, repor
                     exit={{ opacity: 0, x: -20 }}
                     className="flex flex-col justify-center w-full items-center text-center md:items-start md:text-left"
                   >
-                    <div className="mb-2.5 md:mb-8 w-full">
-                      <h2 className="font-mono text-base md:text-2xl font-semibold text-zinc-100 mb-0.5 md:mb-2 tracking-tight">Investigation Workspace</h2>
-                      <p className="font-mono text-[11px] md:text-sm text-zinc-400 leading-tight">Submit a suspicious digital artifact to begin an investigation.</p>
+                    <div className="mb-2 md:mb-8 w-full">
+                      <h2 className="font-mono text-sm md:text-2xl font-semibold text-zinc-100 mb-0.5 md:mb-2 tracking-tight">Investigation Workspace</h2>
+                      <p className="font-mono text-[10.5px] md:text-sm text-zinc-400 leading-tight">Submit a suspicious digital artifact to begin an investigation.</p>
                     </div>
 
-                    <div key={activeTab} className="w-full min-h-0 md:min-h-[260px] flex flex-col justify-center fade-in-quick">
-                      {activeTab === 'URL' ? (
-                        <div className="flex flex-col gap-3 md:gap-4 relative w-full group">
-                          <div className="relative flex items-center w-full">
-                            <div className="absolute left-3.5 md:left-4 text-cyan-500">
-                              <Crosshair className="w-4 h-4 md:w-5 md:h-5" />
+                    <div className="w-full min-h-0 md:min-h-[260px] flex flex-col justify-center">
+                      <AnimatePresence mode="wait">
+                        <motion.div 
+                          key={activeTab}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.22, ease: "easeOut" }}
+                          className="w-full flex flex-col justify-center fade-in-quick"
+                        >
+                          {activeTab === 'URL' ? (
+                            <div className="flex flex-col gap-2.5 md:gap-4 relative w-full group">
+                              <div className="relative flex items-center w-full">
+                                <div className="absolute left-3 md:left-4 text-cyan-500">
+                                  <Crosshair className="w-3.5 h-3.5 md:w-5 md:h-5" />
+                                </div>
+                                <input 
+                                  type="text" 
+                                  value={inputUrl}
+                                  onChange={(e) => {
+                                    setInputUrl(e.target.value);
+                                    setErrorMsg('');
+                                  }}
+                                  placeholder={tabs.find(t => t.id === 'URL').placeholder}
+                                  style={{ fontVariantLigatures: 'none', fontFeatureSettings: '"liga" 0, "calt" 0' }}
+                                  className="w-full bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] rounded-none py-2.5 md:py-5 pl-9 md:pl-14 pr-3 md:pr-4 text-zinc-100 font-mono text-xs md:text-base focus:outline-none focus:border-cyan-500/30 focus:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] transition-all placeholder:text-zinc-600"
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
+                                />
+                              </div>
+                              {errorMsg && (
+                                <div className="text-red-400 text-xs mt-1 text-center md:text-left font-mono">
+                                  {errorMsg}
+                                </div>
+                              )}
+                              <button 
+                                onClick={handleStartInvestigation} 
+                                className="w-full py-2.5 md:py-5 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-cyan-400 font-mono font-bold text-[11px] md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] rounded-none transition-all cursor-pointer"
+                              >
+                                BEGIN INVESTIGATION
+                              </button>
                             </div>
-                            <input 
-                              type="text" 
-                              value={inputUrl}
-                              onChange={(e) => {
-                                setInputUrl(e.target.value);
-                                setErrorMsg('');
+                          ) : activeTab === 'EMAIL' ? (
+                            <EmailWorkspace 
+                              targetLanguage={reportLanguage}
+                              setReportData={handleAnalysisComplete}
+                              setIsInvestigating={(status) => {
+                                if (status) initInvestigation();
+                                else if (investigationState !== 'completed') setInvestigationState('error');
                               }}
-                              placeholder={tabs.find(t => t.id === 'URL').placeholder}
-                              style={{ fontVariantLigatures: 'none', fontFeatureSettings: '"liga" 0, "calt" 0' }}
-                              className="w-full bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] rounded-none py-3.5 md:py-5 pl-11 md:pl-14 pr-4 text-zinc-100 font-mono text-xs md:text-base focus:outline-none focus:border-cyan-500/30 focus:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] transition-all placeholder:text-zinc-600"
-                              onKeyDown={(e) => { if (e.key === 'Enter') handleStartInvestigation(); }}
                             />
-                          </div>
-                          {errorMsg && (
-                            <div className="text-red-400 text-xs mt-1 text-center md:text-left font-mono">
-                              {errorMsg}
+                          ) : activeTab === 'PDF' ? (
+                            <PdfWorkspace 
+                              targetLanguage={reportLanguage}
+                              onAnalysisComplete={handleAnalysisComplete}
+                              setIsInvestigating={(status) => {
+                                if (status) initInvestigation();
+                              }}
+                              setInvestigationState={setInvestigationState}
+                            />
+                          ) : activeTab === 'QR' ? (
+                            <QrWorkspace 
+                              targetLanguage={reportLanguage}
+                              onResult={handleAnalysisComplete}
+                              setIsInvestigating={(status) => {
+                                if (status) initInvestigation();
+                              }}
+                            />
+                          ) : activeTab === 'IMAGES' ? (
+                            <ImageWorkspace 
+                              targetLanguage={reportLanguage}
+                              onResult={handleAnalysisComplete}
+                              setIsInvestigating={(status) => {
+                                if (status) initInvestigation();
+                                else if (investigationState !== 'completed') setInvestigationState('error');
+                              }}
+                              setInvestigationState={setInvestigationState}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center p-6 md:p-12 bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors rounded-xl shadow-xl shadow-cyan-950/30 w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 duration-500">
+                               <Shield className="w-8 h-8 md:w-12 md:h-12 text-zinc-600 mb-3 md:mb-4" />
+                               <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-2">Drop Artifact Here</h3>
+                               <p className="font-mono text-[10px] md:text-xs text-zinc-500 text-center">Supported formats: Email, PDF, QR Code, Images.</p>
                             </div>
                           )}
-                          <button 
-                            onClick={handleStartInvestigation} 
-                            className="w-full py-3.5 md:py-5 bg-zinc-950/60 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-xl border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] text-cyan-400 font-mono font-bold text-xs md:text-sm uppercase tracking-[0.3em] hover:border-cyan-500/30 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_20px_rgba(6,182,212,0.2)] rounded-none transition-all cursor-pointer"
-                          >
-                            BEGIN INVESTIGATION
-                          </button>
-                        </div>
-                      ) : activeTab === 'EMAIL' ? (
-                        <EmailWorkspace 
-                          targetLanguage={reportLanguage}
-                          setReportData={handleAnalysisComplete}
-                          setIsInvestigating={(status) => {
-                            if (status) initInvestigation();
-                            else if (investigationState !== 'completed') setInvestigationState('error');
-                          }}
-                        />
-                      ) : activeTab === 'PDF' ? (
-                        <PdfWorkspace 
-                          targetLanguage={reportLanguage}
-                          onAnalysisComplete={handleAnalysisComplete}
-                          setIsInvestigating={(status) => {
-                            if (status) initInvestigation();
-                          }}
-                          setInvestigationState={setInvestigationState}
-                        />
-                      ) : activeTab === 'QR' ? (
-                        <QrWorkspace 
-                          targetLanguage={reportLanguage}
-                          onResult={handleAnalysisComplete}
-                          setIsInvestigating={(status) => {
-                            if (status) initInvestigation();
-                          }}
-                        />
-                      ) : activeTab === 'IMAGES' ? (
-                        <ImageWorkspace 
-                          targetLanguage={reportLanguage}
-                          onResult={handleAnalysisComplete}
-                          setIsInvestigating={(status) => {
-                            if (status) initInvestigation();
-                            else if (investigationState !== 'completed') setInvestigationState('error');
-                          }}
-                          setInvestigationState={setInvestigationState}
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center p-8 md:p-12 bg-zinc-950/70 backdrop-blur-md border border-cyan-500/20 hover:border-cyan-500/40 transition-colors rounded-xl shadow-xl shadow-cyan-950/30 w-full animate-[fadeIn_0.5s_ease-in-out] opacity-100 duration-500">
-                           <Shield className="w-10 h-10 md:w-12 md:h-12 text-zinc-600 mb-4" />
-                           <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-2">Drop Artifact Here</h3>
-                           <p className="font-mono text-[10px] md:text-xs text-zinc-500 text-center">Supported formats: Email, PDF, QR Code, Images.</p>
-                        </div>
-                      )}
+                        </motion.div>
+                      </AnimatePresence>
                     </div>
                   </motion.div>
                 )}
