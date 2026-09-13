@@ -1,40 +1,19 @@
 import React, { useState, useRef } from "react";
 import { Upload, FileImage, ShieldAlert, RefreshCw, X } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
-import { compressImage } from "../utils/imageCompressor";
 
 export default function ImageWorkspace({ onResult, setIsInvestigating, setInvestigationState, targetLanguage = 'English' }) {
     const [file, setFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
-    const [compressedBlob, setCompressedBlob] = useState(null);
-    const [compressionStats, setCompressionStats] = useState(null);
-    const [isCompressing, setIsCompressing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const fileInputRef = useRef(null);
 
-    const handleFileSelect = async (selectedFile) => {
+    const handleFileSelect = (selectedFile) => {
         if (selectedFile && selectedFile.type.startsWith("image/")) {
             setFile(selectedFile);
             setPreviewUrl(URL.createObjectURL(selectedFile));
             setError(null);
-            setCompressedBlob(null);
-            setCompressionStats(null);
-            setIsCompressing(true);
-
-            try {
-                const blob = await compressImage(selectedFile, 1024, 1024, 0.7);
-                setCompressedBlob(blob);
-                setCompressionStats({
-                    originalSize: selectedFile.size,
-                    compressedSize: blob.size,
-                });
-            } catch (compErr) {
-                console.warn("Client-side compression fallback to original file:", compErr);
-                setCompressedBlob(selectedFile);
-            } finally {
-                setIsCompressing(false);
-            }
         } else {
             setError("Please select a valid image file (.png, .jpg, .jpeg).");
         }
@@ -50,7 +29,7 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
     const handleDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (isLoading || isCompressing) return;
+        if (isLoading) return;
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             handleFileSelect(e.dataTransfer.files[0]);
         }
@@ -59,14 +38,8 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
     const handleClear = (e) => {
         e.stopPropagation();
         if (isLoading) return;
-        if (previewUrl) {
-            URL.revokeObjectURL(previewUrl);
-        }
         setFile(null);
         setPreviewUrl(null);
-        setCompressedBlob(null);
-        setCompressionStats(null);
-        setIsCompressing(false);
         setError(null);
     };
 
@@ -76,24 +49,13 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
         if (setIsInvestigating) setIsInvestigating(true);
         setError(null);
 
+        const formData = new FormData();
+        formData.append("file", file);
+        if (targetLanguage !== 'English') {
+            formData.append("target_language", targetLanguage);
+        }
+
         try {
-            let blobToSend = compressedBlob;
-            if (!blobToSend) {
-                try {
-                    blobToSend = await compressImage(file, 1024, 1024, 0.7);
-                } catch (cErr) {
-                    console.warn("On-demand compression fallback to original file:", cErr);
-                    blobToSend = file;
-                }
-            }
-
-            const formData = new FormData();
-            const baseName = file.name ? file.name.replace(/\.[^/.]+$/, "") : "image";
-            formData.append("file", blobToSend, `${baseName}.jpg`);
-            if (targetLanguage !== 'English') {
-                formData.append("target_language", targetLanguage);
-            }
-
             const response = await fetch(`${API_BASE_URL}/api/investigate/image`, {
                 method: "POST",
                 body: formData,
@@ -112,10 +74,9 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
         } catch (err) {
             console.error("Investigation failed:", err);
             setError(err.message || "An unexpected error occurred.");
+            setIsLoading(false);
             if (setIsInvestigating) setIsInvestigating(false);
             if (typeof setInvestigationState === "function") setInvestigationState("error");
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -127,16 +88,16 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
                 onChange={handleInputChange}
                 accept="image/png, image/jpeg, image/jpg"
                 className="sr-only"
-                disabled={isLoading || isCompressing}
+                disabled={isLoading}
             />
 
             <div
                 onClick={() => {
-                    if (!isLoading && !isCompressing) fileInputRef.current?.click();
+                    if (!isLoading) fileInputRef.current?.click();
                 }}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={handleDrop}
-                className={`cursor-pointer border-2 border-dashed border-cyan-500/20 hover:border-cyan-500/40 bg-zinc-950/70 backdrop-blur-md shadow-xl shadow-cyan-950/30 rounded-lg md:rounded-xl p-3.5 sm:p-6 md:p-8 text-center transition-all duration-300 ${isLoading || isCompressing ? "opacity-50 cursor-not-allowed" : ""
+                className={`cursor-pointer border-2 border-dashed border-cyan-500/20 hover:border-cyan-500/40 bg-zinc-950/70 backdrop-blur-md shadow-xl shadow-cyan-950/30 rounded-lg md:rounded-xl p-3.5 sm:p-6 md:p-8 text-center transition-all duration-300 ${isLoading ? "opacity-50 cursor-not-allowed" : ""
                     }`}
             >
                 {!file ? (
@@ -153,10 +114,10 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
 
                         <button
                             type="button"
-                            disabled={isLoading || isCompressing}
+                            disabled={isLoading}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (!isLoading && !isCompressing) fileInputRef.current?.click();
+                                if (!isLoading) fileInputRef.current?.click();
                             }}
                             className="px-3.5 py-1.5 md:px-5 md:py-2.5 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 font-medium text-xs md:text-sm rounded-lg border border-cyan-500/30 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -186,17 +147,7 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
 
                         <div className="text-center">
                             <p className="text-xs sm:text-sm font-medium text-zinc-200 truncate max-w-xs">{file.name}</p>
-                            {compressionStats ? (
-                                <div className="flex items-center justify-center gap-1.5 mt-0.5 text-[10px] sm:text-xs">
-                                    <span className="text-zinc-500 line-through">{(compressionStats.originalSize / 1024).toFixed(1)} KB</span>
-                                    <span className="text-cyan-400 font-semibold">→ {(compressionStats.compressedSize / 1024).toFixed(1)} KB</span>
-                                    <span className="text-emerald-400 text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/30 font-medium">Optimized</span>
-                                </div>
-                            ) : isCompressing ? (
-                                <p className="text-[10px] sm:text-xs text-cyan-400/80 mt-0.5 animate-pulse">Compressing for fast analysis...</p>
-                            ) : (
-                                <p className="text-[10px] sm:text-xs text-zinc-500 mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
-                            )}
+                            <p className="text-[10px] sm:text-xs text-zinc-500 mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
                         </div>
                     </div>
                 )}
@@ -211,9 +162,9 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
 
             <button
                 type="button"
-                disabled={!file || isLoading || isCompressing}
+                disabled={!file || isLoading}
                 onClick={handleInvestigate}
-                className={`w-full py-2.5 md:py-3.5 rounded-lg md:rounded-xl font-semibold text-xs md:text-sm transition-all flex items-center justify-center space-x-2 ${!file || isLoading || isCompressing
+                className={`w-full py-2.5 md:py-3.5 rounded-lg md:rounded-xl font-semibold text-xs md:text-sm transition-all flex items-center justify-center space-x-2 ${!file || isLoading
                         ? "bg-zinc-800/50 text-zinc-600 border border-zinc-800 cursor-not-allowed"
                         : "bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold shadow-lg shadow-cyan-500/20 active:scale-[0.99]"
                     }`}
@@ -222,11 +173,6 @@ export default function ImageWorkspace({ onResult, setIsInvestigating, setInvest
                     <>
                         <RefreshCw className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
                         <span>Analyzing Image...</span>
-                    </>
-                ) : isCompressing ? (
-                    <>
-                        <RefreshCw className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" />
-                        <span>Optimizing Image...</span>
                     </>
                 ) : (
                     <span>BEGIN INVESTIGATION</span>
