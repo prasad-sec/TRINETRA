@@ -126,4 +126,23 @@
 - **SPA Edge Routing Rewrite (`frontend/vercel.json`):** Configured standard client-side routing rewrites for edge hosting on Vercel, Netlify, and Cloudflare Pages.
 - **Automated Verification:** Verified that backend Pytest passes with 100% success (4 tests in 2.49s) and Vite production bundle compiles cleanly with 0 errors in 1.19s. Synchronized `README.md`, `ARCHITECTURE.md`, `SRS.md`, `SECURITY.md`, and `API_DOCS.md`.
 
+## [Phase 17] Image Investigation Pipeline Optimization & UI Hallucination Defense
+**Objective:** Eliminate server timeouts on constrained free-tier architecture (0.1 vCPU) from heavy OCR/OSINT operations and eliminate detection blindspots where AI-generated UI screenshots bypass mathematical forensic sensors.
+**Actions:**
+- **Asynchronous LLM Inference Migration:** Replaced the two synchronous Groq completions in `/api/investigate/image` with the unified asynchronous `ai_engine.client.chat.completions.create(...)` instance and eliminated redundant local Groq client instantiations.
+- **Threaded Tesseract OCR (`run_in_threadpool`):** Offloaded synchronous CPU-bound `pytesseract.image_to_string` execution to dedicated worker threads via Starlette `run_in_threadpool`, preventing event-loop starvation and unblocking concurrent request handling during heavy matrix parsing.
+- **Keyless OSINT Query Truncation & Resilient 5s Timeout:** Truncated dense extracted OCR text down to the first 15 words (`" ".join(ocr_text.split()[:15])`) before web querying, and wrapped DuckDuckGo lookups in a strict 5-second asynchronous timeout (`asyncio.wait_for(...)`) with `DDGS(timeout=5)`. Gracefully returns `"OSINT Timeout Exceeded"` on hangs, leaving the server responsive.
+- **Step 2 Forensic Audit Enhancement (UI & Monospace Typography):** Expanded Step 2 (Structural & Geometric Audit) in the `threat_prompt` with heuristics targeting AI software screenshots: garbled words, nonsensical UI tabs (e.g., "PUTE", "Cookqérues"), melting/overlapping panels, non-hexadecimal characters in hash IDs, and distorted port numbers/routes. Mandates immediate `"AI-GENERATED"` classification regardless of flat FFT/ELA scores.
+- **Verification:** Verified backend compilation (`py_compile`) and test suite integrity across endpoints.
+
+## [Phase 18] Event-Loop Concurrency Optimization & Vision API Compatibility
+**Objective:** Resolve event-loop blocking from mathematical signal processing and external HTTP requests, and prevent 400 Bad Request errors caused by routing base64 images to text-only LLMs.
+**Actions:**
+- **Threaded FFT Execution (`run_in_threadpool`):** Wrapped `compute_fft_anomaly(file_bytes)` in Starlette's `run_in_threadpool` (`fft_result = await run_in_threadpool(compute_fft_anomaly, file_bytes)`), offloading NumPy 2D FFT matrix transformations from the main thread.
+- **Threaded IP Geolocation Lookups (`run_in_threadpool`):** Offloaded synchronous `requests.get` calls inside `analyze_email`'s Received header parsing loop (`geo_location = await run_in_threadpool(get_ip_geolocation, ip)`), ensuring third-party IP geolocation API network latency never halts the asyncio event loop.
+- **Vision Model API Alignment (`llama-3.2-11b-vision-preview`):** Updated base64 multimodal image ingestion in both `/api/investigate/qr` (Stage 2 Groq Vision fallback) and `/api/investigate/image` (Stage 1 Vision AI) from text-only `qwen/qwen3.8-27b` to `llama-3.2-11b-vision-preview`. Preserved Qwen 3.8 27B for downstream text-only threat analysis and JSON reporting.
+- **Verification:** Successfully compiled `backend/api/investigate.py` with zero syntax errors.
+
+
+
 

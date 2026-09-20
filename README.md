@@ -48,11 +48,11 @@ When digital artifact payloads are uploaded via the React frontend, the FastAPI 
 
 ## Key Features
 - **URL Intelligence & Typosquatting Detection**: Extracts domains, TLD risk scores, redirect chains, and performs Levenshtein distance typosquatting checks against high-value brand indexes.
-- **Email Forensics & Social Engineering Evaluation**: Parses `.eml` and Microsoft Outlook `.msg` files to extract routing headers, verify SPF/DKIM/DMARC alignment, inspect all embedded and attached images (passing them simultaneously to Vision AI), and identify urgency-based linguistic manipulation.
+- **Email Forensics & Social Engineering Evaluation**: Parses `.eml` and Microsoft Outlook `.msg` files to extract routing headers, perform non-blocking threaded IP geolocation lookups (`run_in_threadpool`), verify SPF/DKIM/DMARC alignment, inspect all embedded and attached images (passing them simultaneously to Vision AI), and identify urgency-based linguistic manipulation.
 - **Automated PII Masking (Data Privacy)**: A zero-trust local privacy interceptor that is permanently enforced by default. It proactively redacts sensitive Personally Identifiable Information (PII) such as Credit Card numbers (validated via the Luhn algorithm), Aadhaar numbers, and international mobile numbers from unstructured text (emails, OCR) locally before any data leaves the backend for AI inference, while strictly preserving crucial Indicators of Compromise (IOCs) like URLs, IPs, and email addresses.
 - **PDF Stream Inspection & Link Unmasking**: Analyzes PDF structures directly in memory using PyMuPDF (`fitz`) to extract embedded hyperlinks, annotations, and invoice text while bypassing malicious JavaScript execution layers.
-- **QR Code (Quishing) Analysis with Multi-Stage Pipeline**: Utilizes local OpenCV and `zxing-cpp` (with dark-mode bitwise-NOT matrix inversion), backed by a Groq Vision AI fallback (`Llama-3.2-11b-vision-preview`) for heavily stylized or logo-overlaid payment matrices (e.g., UPI/GPay codes). AI threat reasoning translates findings into accessible, non-technical guidance while recognizing benign transaction flows.
-- **Screenshot Vision OCR & Synthetic Media Engine**: Extracts text locally via `pytesseract`, performs live keyless OSINT queries via DuckDuckGo, and evaluates visual streams using cryptographic C2PA manifests, EXIF metadata, Error Level Analysis (ELA) scores, and 2D Fast Fourier Transform (FFT) spectrum analysis to detect AI-generated synthetic artifacts and deepfake markers prior to LLM threat synthesis.
+- **QR Code (Quishing) Analysis with Multi-Stage Pipeline**: Utilizes local OpenCV and `zxing-cpp` (with dark-mode bitwise-NOT matrix inversion), backed by a Groq Vision AI fallback (`llama-3.2-11b-vision-preview`) for heavily stylized or logo-overlaid payment matrices (e.g., UPI/GPay codes). AI threat reasoning translates findings into accessible, non-technical guidance while recognizing benign transaction flows.
+- **Screenshot Vision OCR & Synthetic Media Engine**: Extracts text locally via threaded `pytesseract` and executes mathematical 2D Fast Fourier Transform (FFT) spectrum analysis in threadpools (`run_in_threadpool`) to keep the event loop non-blocking. Performs live keyless OSINT queries via DuckDuckGo with query truncation (first 15 words) and a resilient 5-second timeout wrapper, and evaluates visual streams using cryptographic C2PA manifests, EXIF metadata, and Error Level Analysis (ELA). Powered by a two-stage pipeline utilizing `llama-3.2-11b-vision-preview` for base64 visual decoding and `qwen/qwen3.8-27b` for text reasoning, governed by an enhanced 4-Step Forensic Audit capable of unmasking synthetic UI screenshots, monospace typography melting, and non-hex hash distortions that bypass standard pixel sensors.
 - **Multilingual Threat Reporting**: Generates diagnostic reports, threat correlations, and executive summaries in multiple target languages via dynamic backend LLM prompt instruction, while maintaining a lean, high-performance English UI that seamlessly supports browser-level translation.
 - **Dynamic AI Core Telemetry & Command Bridge**: Implements real-time network state tracking (`navigator.onLine`) with glowing emerald/rose status beacons and an integrated Command Bridge navbar that links analysts directly to system telemetry and engine specifications.
 - **Unified Triad of Forensic Terminal Modals**: Architectural synchronization across `System About`, `Reasoning Groq`, and `Privacy Shield`. Built with deep glassmorphism (`bg-[#0a0f18]/95`, `backdrop-blur-2xl`, `border-cyan-500/30`, subtle inner glow), top-right `[ESC]` close triggers with global keyboard bindings, and semantic multi-colored accent palettes (Emerald, Purple, Amber, Rose, and Cyan) structured across terminal cards.
@@ -64,7 +64,7 @@ When digital artifact payloads are uploaded via the React frontend, the FastAPI 
 - **Frontend**: React, Tailwind CSS, Lucide Icons
 - **Backend**: Python 3.10+, FastAPI, Uvicorn
 - **Extraction Libraries**: `PyMuPDF` (fitz), `zxing-cpp`, `OpenCV` (cv2), `pytesseract`, `c2pa-python`, `Pillow`, `duckduckgo-search`, `extract-msg`, native Python `email` module
-- **AI Integration**: Groq API (Llama-3.3-70b-versatile, Llama-3.2-11b-vision-preview, Qwen 3.6 27B)
+- **AI Integration**: Groq API (Llama-3.3-70b-versatile, Llama-3.2-11b-vision-preview, Qwen 3.8 27B)
 
 ## Repository Structure & Module Architecture
 
@@ -101,7 +101,7 @@ TRINETRA/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── AboutHologram.jsx         # System dossier modal with 5-vector Bento grid & deep-dive drawers
-│   │   │   ├── AIAssistantEye.jsx        # Cybernetic Third Eye HUD with pupil tracking & reactive status rings
+│   │   │   ├── AIAssistantEye.jsx        # Cybernetic Third Eye HUD with pupil tracking & reactive status ringsdi
 │   │   │   ├── AiCoreStatus.jsx          # Live network telemetry beacon monitoring client connectivity
 │   │   │   ├── AIInvestigationResult.jsx # Holographic threat dossier rendering verdicts, scores & evidence
 │   │   │   ├── CinematicSplash.jsx       # 3-second mecha-iris boot sequence with system diagnostic telemetry
