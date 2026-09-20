@@ -761,7 +761,7 @@ async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)
             client = Groq(api_key=os.getenv("GROQ_API_KEY"))
             b64_img = base64.b64encode(contents).decode('utf-8')
             vision_res = client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
+                model="llama-3.2-90b-vision-instruct",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": "Extract the raw payload, URL, or payment string (e.g. upi://) from this QR code. Return ONLY the raw string. If unreadable, return FAILED."},
@@ -1060,7 +1060,7 @@ ai_reasoning: Explain how the Web Context and Sensor Data prove your verdict."""
         extracted_context = "Visual context could not be determined."
         try:
             vision_res = await ai_engine.client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
+                model="llama-3.2-90b-vision-instruct",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": vision_prompt},
