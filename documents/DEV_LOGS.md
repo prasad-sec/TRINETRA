@@ -140,7 +140,7 @@
 **Actions:**
 - **Threaded FFT Execution (`run_in_threadpool`):** Wrapped `compute_fft_anomaly(file_bytes)` in Starlette's `run_in_threadpool` (`fft_result = await run_in_threadpool(compute_fft_anomaly, file_bytes)`), offloading NumPy 2D FFT matrix transformations from the main thread.
 - **Threaded IP Geolocation Lookups (`run_in_threadpool`):** Offloaded synchronous `requests.get` calls inside `analyze_email`'s Received header parsing loop (`geo_location = await run_in_threadpool(get_ip_geolocation, ip)`), ensuring third-party IP geolocation API network latency never halts the asyncio event loop.
-- **Vision Model API Alignment (`llama-3.2-90b-vision-instruct`):** Updated base64 multimodal image ingestion in both `/api/investigate/qr` (Stage 2 Groq Vision fallback) and `/api/investigate/image` (Stage 1 Vision AI) from text-only `qwen/qwen3.8-27b` to `llama-3.2-90b-vision-instruct`. Preserved Qwen 3.8 27B for downstream text-only threat analysis and JSON reporting.
+- **Vision Model API Alignment (`llama-3.2-11b-vision-instruct`):** Updated base64 multimodal image ingestion in both `/api/investigate/qr` (Stage 2 Groq Vision fallback) and `/api/investigate/image` (Stage 1 Vision AI) from text-only `qwen/qwen3.8-27b` to `llama-3.2-11b-vision-instruct`. Preserved Qwen 3.8 27B for downstream text-only threat analysis and JSON reporting.
 - **Verification:** Successfully compiled `backend/api/investigate.py` with zero syntax errors.
 
 

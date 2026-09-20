@@ -85,7 +85,7 @@ curl -X POST "http://127.0.0.1:8000/api/investigate/pdf" \
 
 ## 4. QR Code (Quishing) Analysis (`/qr`)
 
-Decodes and evaluates QR matrices (including stylized or logo-overlaid variants) using localized OpenCV processing with Stage-2 Vision AI fallback (`llama-3.2-90b-vision-instruct`) for base64 image decoding and `qwen/qwen3.8-27b` for threat classification.
+Decodes and evaluates QR matrices (including stylized or logo-overlaid variants) using localized OpenCV processing with Stage-2 Vision AI fallback (`llama-3.2-11b-vision-instruct`) for base64 image decoding and `qwen/qwen3.8-27b` for threat classification.
 
 - **Endpoint**: `/api/investigate/qr`
 - **Method**: `POST`
@@ -103,7 +103,7 @@ curl -X POST "http://127.0.0.1:8000/api/investigate/qr" \
 
 ## 5. Screenshot / Image Vision OCR (`/image`)
 
-Evaluates visual streams using cryptographic C2PA manifests, EXIF metadata, Error Level Analysis (ELA), threaded 2D Fast Fourier Transform (FFT) spectrum analysis (`run_in_threadpool`), threaded Tesseract OCR, and resilient keyless DuckDuckGo OSINT (with 15-word query truncation and a strict 5s timeout). Employs multimodal `llama-3.2-90b-vision-instruct` for Stage 1 base64 visual analysis and `qwen/qwen3.8-27b` for Stage 2 threat reasoning.
+Evaluates visual streams using cryptographic C2PA manifests, EXIF metadata, Error Level Analysis (ELA), threaded 2D Fast Fourier Transform (FFT) spectrum analysis (`run_in_threadpool`), threaded Tesseract OCR, and resilient keyless DuckDuckGo OSINT (with 15-word query truncation and a strict 5s timeout). Employs multimodal `llama-3.2-11b-vision-instruct` for Stage 1 base64 visual analysis and `qwen/qwen3.8-27b` for Stage 2 threat reasoning.
 
 - **Endpoint**: `/api/investigate/image`
 - **Method**: `POST`
