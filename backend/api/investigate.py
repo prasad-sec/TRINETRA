@@ -1,6 +1,5 @@
 import logging
 import traceback
-import asyncio
 logger = logging.getLogger(__name__)
 
 import email
@@ -288,7 +287,7 @@ async def analyze_email(
                     for header in received_headers:
                         ips_found = ip_pattern.findall(header)
                         for ip in ips_found:
-                            geo_location = await run_in_threadpool(get_ip_geolocation, ip)
+                            geo_location = get_ip_geolocation(ip)
                             if geo_location != "Invalid_IP" and not any(ip in hop for hop in routing_hops):
                                 routing_hops.append(f"Hop IP: {ip} | Location: {geo_location}")
                 
@@ -761,7 +760,7 @@ async def investigate_qr_endpoint(request: Request, file: UploadFile = File(...)
             client = Groq(api_key=os.getenv("GROQ_API_KEY"))
             b64_img = base64.b64encode(contents).decode('utf-8')
             vision_res = client.chat.completions.create(
-                model="llama-3.2-11b-vision-instruct",
+                model="qwen/qwen3.8-27b",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": "Extract the raw payload, URL, or payment string (e.g. upi://) from this QR code. Return ONLY the raw string. If unreadable, return FAILED."},
@@ -924,7 +923,7 @@ def compute_fft_anomaly(image_bytes: bytes) -> str:
     except Exception as e:
         return f"FFT Analysis Skipped: {str(e)}"
 
-async def free_osint_lookup(ocr_text: str) -> str:
+def free_osint_lookup(ocr_text: str) -> str:
     """
     Uses DuckDuckGo to search the web for context based on extracted image text.
     Requires no API keys and has no hard rate limits.
@@ -933,11 +932,8 @@ async def free_osint_lookup(ocr_text: str) -> str:
         return "No sufficient text extracted for OSINT web search."
         
     try:
-        # Search the web using the text found in the image with strict 5s timeout
-        def _search():
-            return DDGS(timeout=5).text(ocr_text, max_results=3)
-
-        results = await asyncio.wait_for(run_in_threadpool(_search), timeout=5.0)
+        # Search the web using the text found in the image
+        results = DDGS().text(ocr_text, max_results=3)
         
         if not results:
             return "No relevant web context found."
@@ -948,8 +944,6 @@ async def free_osint_lookup(ocr_text: str) -> str:
             context += f"- {res.get('title')}: {res.get('body')}\n"
             
         return context
-    except (asyncio.TimeoutError, TimeoutError):
-        return "OSINT Timeout Exceeded"
     except Exception as e:
         return f"OSINT Search Failed: {str(e)}"
 
@@ -958,7 +952,7 @@ async def free_osint_lookup(ocr_text: str) -> str:
 async def investigate_image_endpoint(request: Request, file: UploadFile = File(...), target_language: str = Form("English")):
     await file.seek(0)
     file_bytes = await file.read()
-    fft_result = await run_in_threadpool(compute_fft_anomaly, file_bytes)
+    fft_result = compute_fft_anomaly(file_bytes)
     
     # 0. Pre-LLM Forensic Extraction Layer
     exif_data = await run_in_threadpool(extract_exif_data, file_bytes)
@@ -974,8 +968,7 @@ async def investigate_image_endpoint(request: Request, file: UploadFile = File(.
         nparr = np.frombuffer(file_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         if img is not None:
-            raw_ocr = await run_in_threadpool(pytesseract.image_to_string, img)
-            ocr_text = raw_ocr.strip()
+            ocr_text = pytesseract.image_to_string(img).strip()
             ocr_text = mask_pii_for_forensics(ocr_text)
             qr_payloads = extract_qr_from_image_bytes(file_bytes)
             if qr_payloads:
@@ -991,11 +984,12 @@ async def investigate_image_endpoint(request: Request, file: UploadFile = File(.
         print(f"Image CV parsing failed: {e}")
 
     # Execute Web OSINT using OCR text
-    clean_search_query = " ".join(ocr_text.split()[:15])
-    osint_result = await free_osint_lookup(clean_search_query)
+    osint_result = free_osint_lookup(ocr_text)
 
     # 2. Two-Stage AI Vision & Threat Analysis via Groq
     try:
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        
         # Payload Optimization (PIL Image Pre-processing)
         optimized_bytes = file_bytes
         try:
@@ -1059,8 +1053,8 @@ ai_reasoning: Explain how the Web Context and Sensor Data prove your verdict."""
         
         extracted_context = "Visual context could not be determined."
         try:
-            vision_res = await ai_engine.client.chat.completions.create(
-                model="llama-3.2-11b-vision-instruct",
+            vision_res = client.chat.completions.create(
+                model="qwen/qwen3.8-27b",
                 messages=[
                     {"role": "user", "content": [
                         {"type": "text", "text": vision_prompt},
@@ -1098,10 +1092,6 @@ STEP 2: STRUCTURAL & GEOMETRIC AUDIT
 - Check symmetry and geometry: Are circular frames warped or broken? Are paired features (horns, ears, armor pauldrons) missing or mismatched?
 - Check object junctions: Do props (e.g., spatulas, weapons, food) melt directly into the character or armor with impossible physics?
 - Check crowd boundaries: In multi-character art, do limbs, tails, or hair fuse into neighboring bodies without clean occlusion lines?
-- Check UI & Monospace Typography (Screenshots/Software):
-  * Look for garbled words, nonsensical UI tabs (e.g., "PUTE", "Cookqérues"), or melting/overlapping interface elements.
-  * Check hexadecimal IDs and URLs: Are non-hex characters present in hashes? Are port numbers or routes distorted?
-  * If UI text exhibits diffusion melting, overlapping panels, or pseudo-gibberish -> Immediately classify media_origin as "AI-GENERATED" regardless of FFT/ELA scores.
 - If any of these diffusion errors are present -> Classify media_origin as "AI-GENERATED" (synthetic_probability 80-95), even if the image contains clean text, watermarks, or sharp outlines.
 
 STEP 3: DECEPTION & PAYLOAD AUDIT
@@ -1148,7 +1138,7 @@ Respond ONLY with a valid JSON object matching this exact schema:
 }}
 """
 
-        chat_completion = await ai_engine.client.chat.completions.create(
+        chat_completion = client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": threat_prompt}],
             temperature=0.1,
